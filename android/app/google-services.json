@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "431719915398",
+    "project_id": "studyco-app-55a76",
+    "storage_bucket": "studyco-app-55a76.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:431719915398:android:02c68874b96112f2b01607",
+        "android_client_info": {
+          "package_name": "com.studyco.online"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB8h-6ffPSQmB7VEZLnGvHR1lJc-1u8x80"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
