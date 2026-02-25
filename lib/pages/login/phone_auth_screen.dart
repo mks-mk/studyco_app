@@ -19,7 +19,7 @@ class _PhoneNumberAuthScreenState extends State<PhoneNumberAuthScreen> {
   final TextEditingController controller = TextEditingController();
   String initialCountry = 'IN';
   PhoneNumber number = PhoneNumber(isoCode: 'IN');
-  bool agreedToTerms = true;
+  bool agreedToTerms = true; 
   bool isLoading = false; // Added loading state
 
   Future<void> _submitPhoneNumber() async {

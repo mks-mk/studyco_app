@@ -2,8 +2,10 @@ import 'dart:async';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:studyco_app/Utilities/variables/app_colors.dart';
 import '../Utilities/components/single_login_alert.dart';
 import '../Utilities/functions/cantact.dart';
 import '../Utilities/functions/firebase/google_sighnout.dart';
@@ -66,24 +68,51 @@ class BanController extends GetxController {
   void showBanD() {
     if (isOpenD) return;
     isOpenD = true;
-    showCustomDialog(
-      title: "Account Access Restricted!",
-      message:
-          '''We’ve noticed some activity on your account that doesn’t align with our community guidelines.As a result, your account has been temporarily suspended.
-If you believe this is a mistake or have any questions, please contact our support team.We’re here to help!
+    Get.dialog(
+      PopScope(
+        canPop: false,
+        child: AlertDialog(
+          backgroundColor: Colors.white,
+          title: Text(
+            "Account Access Restricted!",
+            style: TextStyle(
+              color: Colors.black,
+              fontFamily: 'studycoFont',
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          content: Text(
+            '''We've noticed some activity on your account that doesn't align with our community guidelines. As a result, your account has been temporarily suspended.
 
-Thank you for your understanding.
-''',
-      agreeText: "Contact us",
-      cancelText: "Exit",
-      onAgree: () async {
-        await signOut();
-        Get.offAll(() => const Splashscreen());
-        await contactUs();
-      },
-      onCancel: () async {
-        if (Platform.isAndroid) SystemNavigator.pop();
-      },
+If you believe this is a mistake or have any questions, please contact our support team. We're here to help!
+
+Thank you for your understanding.''',
+            style: TextStyle(color: Colors.black, fontFamily: 'studycoFont',fontSize: 18, height: 1.5, letterSpacing: 0.5),
+          ),
+          actions: [
+            if (Platform.isAndroid)
+              TextButton(
+                onPressed: () async {
+                  SystemNavigator.pop();
+                },
+                child: Text("Exit"),
+              ),
+            ElevatedButton(
+              onPressed: () async {
+                await signOut();
+                Get.offAll(() => const Splashscreen());
+                await contactUs();
+              },
+              style: ButtonStyle(
+                backgroundColor: WidgetStatePropertyAll(AppColor.primary_1),
+              ),
+              child: Text("Contact us", style: TextStyle(color: Colors.black)),
+            ),
+          ],
+        ),
+      ),
+      barrierDismissible: false,
+      barrierColor: Colors.black54,
     ).then((_) => isOpenD = false);
   }
 

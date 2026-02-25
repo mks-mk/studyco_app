@@ -5,16 +5,20 @@ import 'package:liquid_pull_to_refresh/liquid_pull_to_refresh.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import '../../Utilities/variables/app_colors.dart';
 import '../../controllers/bookmark/bookmarkController.dart';
+import '../../controllers/recentOpenings/recent_openings_controller.dart';
 import '../../controllers/subjectController/getMaterialsWithSubjects.dart';
+import '../../controllers/cart/cart_controller.dart';
+import '../../controllers/myMaterials/my_materials_controller.dart';
 import '../../models/material_model.dart';
+import '../carts/material_details_page.dart';
 import '../pdf_viewer/pdf_view_page.dart';
 
 class MyBookmarks extends StatefulWidget {
-  final String subject; // Added subject parameter
+  final String subject;
 
   const MyBookmarks({
     super.key,
-    this.subject = 'All', // Default to 'All' if no subject specified
+    this.subject = 'All',
   });
 
   @override
@@ -35,10 +39,14 @@ class _MyBookmarksState extends State<MyBookmarks> {
   late FocusNode searchFocusNode;
   late BookmarkController bookmarkController;
   late MaterialsWithSubjectsController materialsController;
+  late RecentMaterialsController recentController; // ADD THIS
 
   // Bookmarked materials
   RxList<MaterialModel> bookmarkedMaterials = <MaterialModel>[].obs;
   RxBool isLoading = false.obs;
+
+  // FIXED: Add flag to prevent infinite loop
+  bool _isListenerActive = false;
 
   @override
   void initState() {
@@ -50,12 +58,41 @@ class _MyBookmarksState extends State<MyBookmarks> {
     bookmarkController = Get.find<BookmarkController>();
     materialsController = Get.find<MaterialsWithSubjectsController>();
 
+    // Initialize cart and purchased materials controllers
+    Get.put(MyMaterialsController());
+    recentController = Get.put(RecentMaterialsController()); // ADD THIS
+
     // Set initial subject filter from parameter
     selectedSubject = widget.subject;
+
+    // FIXED: Setup listener without triggering initial fetch
+    _setupBookmarkListener();
 
     // Fetch data after build
     WidgetsBinding.instance.addPostFrameCallback((_) {
       fetchBookmarkedMaterials();
+    });
+  }
+
+  // FIXED: Setup listener without causing infinite loop
+  void _setupBookmarkListener() {
+    // Listen to bookmark changes but prevent recursive calls
+    ever(bookmarkController.bookmarkedIds, (_) {
+      if (!_isListenerActive) {
+        print('Bookmarks changed, refreshing materials...');
+        _isListenerActive = true;
+
+        // Use Future.delayed to break the recursive loop
+        Future.delayed(Duration(milliseconds: 100), () {
+          if (mounted) {
+            fetchBookmarkedMaterials().then((_) {
+              _isListenerActive = false;
+            });
+          } else {
+            _isListenerActive = false;
+          }
+        });
+      }
     });
   }
 
@@ -66,22 +103,35 @@ class _MyBookmarksState extends State<MyBookmarks> {
     super.dispose();
   }
 
+  // FIXED: Enhanced fetch method with proper loop prevention
   Future<void> fetchBookmarkedMaterials() async {
+    if (_isListenerActive && isLoading.value) {
+      print('Fetch already in progress, skipping...');
+      return;
+    }
+
     try {
       await Future.microtask(() async {
         isLoading.value = true;
+
+        // FIXED: Clear the list before adding new items to prevent duplicates
         bookmarkedMaterials.clear();
+
+        // FIXED: Fetch bookmarks without triggering listener
+        await bookmarkController.fetchAllBookmarks();
 
         // Get all bookmarked subjects
         final bookmarkedSubjects = bookmarkController.getBookmarkedSubjects();
+        print('Bookmarked subjects: $bookmarkedSubjects');
 
         for (String subject in bookmarkedSubjects) {
           // Get bookmark IDs for this subject
           final bookmarkIds = bookmarkController.getBookmarkedIds(subject: subject);
+          print('Bookmark IDs for $subject: $bookmarkIds');
 
           if (bookmarkIds.isNotEmpty) {
-            // Fetch materials for this subject
-            await materialsController.fetchData(subject: subject);
+            // FIXED: Use refreshMaterials to force fresh data
+            await materialsController.refreshMaterials(subject: subject);
 
             // Filter materials by bookmark IDs and add subject info
             final subjectMaterials = materialsController.materials
@@ -90,21 +140,24 @@ class _MyBookmarksState extends State<MyBookmarks> {
                 .toList();
 
             bookmarkedMaterials.addAll(subjectMaterials);
+            print('Added ${subjectMaterials.length} materials for $subject');
           }
         }
 
-        print('Fetched ${bookmarkedMaterials.length} bookmarked materials');
+        print('Total fetched ${bookmarkedMaterials.length} bookmarked materials');
       });
     } catch (e) {
       print('Error fetching bookmarked materials: $e');
       Future.delayed(Duration.zero, () {
-        Get.snackbar(
-          'Error',
-          'Failed to load bookmarked materials: $e',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-        );
+        if (mounted) {
+          Get.snackbar(
+            'Error',
+            'Failed to load bookmarked materials: $e',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+          );
+        }
       });
     } finally {
       isLoading.value = false;
@@ -128,7 +181,11 @@ class _MyBookmarksState extends State<MyBookmarks> {
       child: LiquidPullToRefresh(
         key: refreshIndicatorKey,
         onRefresh: () async {
+          // FIXED: Enhanced refresh that prevents loop
+          print('Pull to refresh triggered');
+          _isListenerActive = true;
           await fetchBookmarkedMaterials();
+          _isListenerActive = false;
         },
         backgroundColor: AppColor.backgroundColor,
         color: Colors.orange,
@@ -164,7 +221,7 @@ class _MyBookmarksState extends State<MyBookmarks> {
           ),
           body: SafeArea(
             child: Obx(
-                  () => SingleChildScrollView( // Made the entire page scrollable
+                  () => SingleChildScrollView(
                 physics: AlwaysScrollableScrollPhysics(),
                 child: Padding(
                   padding: const EdgeInsets.all(12.0),
@@ -173,18 +230,18 @@ class _MyBookmarksState extends State<MyBookmarks> {
                     children: [
                       // Enhanced Search Section
                       _buildEnhancedSearchSection(),
-
-                      SizedBox(height: 12),
+                      SizedBox(height: 10),
 
                       // Stats and Filter Section
                       _buildStatsAndFilters(),
+                      SizedBox(height: 8),
 
                       // Filter Chips
                       if (_hasActiveFilters()) _buildActiveFilterChips(),
 
                       // Materials Grid/List
                       SizedBox(
-                        height: Get.height * 0.6, // Fixed height for the content
+                        height: Get.height * 0.6,
                         child: Skeletonizer(
                           enabled: isLoading.value,
                           child: _getFilteredMaterials().isEmpty
@@ -442,7 +499,7 @@ class _MyBookmarksState extends State<MyBookmarks> {
       bool matchesSearch = searchQuery.isEmpty ||
           material.noteName.toLowerCase().contains(searchQuery.toLowerCase());
 
-      // Subject filter - ENHANCED for parameter support
+      // Subject filter
       bool matchesSubject = selectedSubject == 'All' ||
           materialWithSubject.subject == selectedSubject;
 
@@ -463,9 +520,10 @@ class _MyBookmarksState extends State<MyBookmarks> {
     }).toList();
   }
 
-  // Build Grid View
+  // UPDATED: Build Grid View with cart, purchase integration, and recent materials tracking
   Widget _buildGridView() {
     final filteredMaterials = _getFilteredMaterials();
+    final myMaterialsController = Get.find<MyMaterialsController>();
 
     return GridView.builder(
       physics: AlwaysScrollableScrollPhysics(),
@@ -479,149 +537,224 @@ class _MyBookmarksState extends State<MyBookmarks> {
       itemBuilder: (context, index) {
         final material = filteredMaterials[index] as MaterialModelWithSubject;
 
-        return GestureDetector(
-          onTap: () {
-            if (material.type == "pdf" || material.type == "Pdf") {
-              Get.to(() => PremiumPdfViewPage(
-                url: material.source,
-                title: material.noteName,
-              ));
-            }
-          },
-          child: Container(
-            decoration: BoxDecoration(
-              color: material.color,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: material.color.withOpacity(0.3)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Image
-                Expanded(
-                  flex: 3,
-                  child: Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-                      color: material.color,
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-                      child: CachedNetworkImage(
-                        imageUrl: material.thumbnail,
-                        fit: BoxFit.cover,
+        return Obx(() {
+          final isPurchased = myMaterialsController.isMaterialPurchased(material.subject, material.id);
+
+          return GestureDetector(
+            onTap: () {
+              if (material.price > 0 && !isPurchased) {
+                Get.to(
+                      () => MaterialDetailsPage(material: material,subject: widget.subject,),
+                  transition: Transition.fadeIn,
+                );
+              } else {
+                // ADDED: For free materials OR purchased materials, add to recent and open PDF
+                if (material.type == "pdf" || material.type == "Pdf") {
+                  // ADD TO RECENT MATERIALS BEFORE OPENING
+                  recentController.addRecentMaterial(
+                    materialId: material.id,
+                    title: material.noteName,
+                    subject: material.subject,
+                    type: material.type,
+                    thumbnail: material.thumbnail,
+                    source: material.source,
+                    price: material.price.toDouble(),
+                  );
+
+                  Get.to(() => PremiumPdfViewPage(
+                    url: material.source,
+                    title: material.noteName,
+                  ));
+                }
+              }
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                color: material.color,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: material.color.withOpacity(0.3)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Image
+                  Expanded(
+                    flex: 3,
+                    child: Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                        color: material.color,
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                        child: CachedNetworkImage(
+                          imageUrl: material.thumbnail,
+                          fit: BoxFit.cover,
+                        ),
                       ),
                     ),
                   ),
-                ),
 
-                // Content
-                Expanded(
-                  flex: 2,
-                  child: Padding(
-                    padding: EdgeInsets.all(8),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Subject badge
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Container(
-                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color:material.color.computeLuminance() > 0.5
-                                    ? Colors.white
-                                    : Colors.black,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                material.subject,
-                                style: TextStyle(
+                  // Content
+                  Expanded(
+                    flex: 2,
+                    child: Padding(
+                      padding: EdgeInsets.all(8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Subject badge and remove bookmark
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Container(
+                                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
                                   color: material.color.computeLuminance() > 0.5
-                                      ? Colors.black
-                                      : Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
+                                      ? Colors.white
+                                      : Colors.black,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  material.subject,
+                                  style: TextStyle(
+                                    color: material.color.computeLuminance() > 0.5
+                                        ? Colors.black
+                                        : Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
-                            ),
-                            Container(
-                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(100),
-                              ),
-                              child: GestureDetector(
-                                onTap: () async {
-                                  Future.delayed(Duration.zero, () async {
+                              Container(
+                                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(100),
+                                ),
+                                child: GestureDetector(
+                                  onTap: () async {
+                                    // FIXED: Prevent listener trigger during bookmark removal
+                                    _isListenerActive = true;
                                     await bookmarkController.removeBookmarkedId(
                                       subject: material.subject,
                                       id: material.id,
                                     );
                                     await fetchBookmarkedMaterials();
-                                  });
-                                },
-                                child: Icon(
-                                  Icons.bookmark_remove,
-                                  color: Colors.red,
-                                  size: 20,
+                                    _isListenerActive = false;
+                                  },
+                                  child: Icon(
+                                    Icons.bookmark_remove,
+                                    color: Colors.red,
+                                    size: 20,
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-
-                        SizedBox(height: 2),
-
-                        // Title
-                        Text(
-                          material.noteName,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: material.color.computeLuminance() > 0.5
-                                ? Colors.black
-                                : Colors.white,
+                            ],
                           ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
 
-                        Spacer(),
+                          SizedBox(height: 2),
 
-                        // Price and bookmark
-                        Container(
-                          padding: EdgeInsets.symmetric(vertical: 2, horizontal: 6),
-                          decoration: BoxDecoration(
-                            color: material.price == 0 ? Colors.transparent : Colors.white,
-                            borderRadius: BorderRadiusGeometry.circular(12)
-                          ),
-                          child: Text(
-                            material.price == 0 ? '' : '₹${material.price}',
+                          // Title
+                          Text(
+                            material.noteName,
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
-                              color: Colors.black
+                              color: material.color.computeLuminance() > 0.5
+                                  ? Colors.black
+                                  : Colors.white,
                             ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                      ],
+
+                          Spacer(),
+
+                          // Price, cart, or purchased badge with recent indicator
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              if (material.price > 0)
+                                Container(
+                                  padding: EdgeInsets.symmetric(vertical: 2, horizontal: 6),
+                                  decoration: BoxDecoration(
+                                    color: isPurchased ? Colors.green : Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: isPurchased
+                                      ? Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.check_circle,
+                                        size: 12,
+                                        color: Colors.white,
+                                      ),
+                                      SizedBox(width: 2),
+                                      Text(
+                                        'PURCHASED',
+                                        style: TextStyle(
+                                          fontSize: 8,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                      : Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        '₹${material.price}',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.black,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                              // ADDED: Recent indicator
+                              Obx(() {
+                                final isInRecent = recentController.isInRecent(material.id);
+                                return isInRecent
+                                    ? Container(
+                                  padding: EdgeInsets.all(2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.orange,
+                                    borderRadius: BorderRadius.circular(100),
+                                  ),
+                                  child: Icon(
+                                    Icons.history,
+                                    size: 12,
+                                    color: Colors.white,
+                                  ),
+                                )
+                                    : SizedBox.shrink();
+                              }),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        );
+          );
+        });
       },
     );
   }
 
-  // Build List View
+  // UPDATED: Build List View with cart, purchase integration, and recent materials tracking
   Widget _buildListView() {
     final filteredMaterials = _getFilteredMaterials();
+    final myMaterialsController = Get.find<MyMaterialsController>();
 
     return ListView.builder(
       physics: AlwaysScrollableScrollPhysics(),
@@ -629,161 +762,261 @@ class _MyBookmarksState extends State<MyBookmarks> {
       itemBuilder: (context, index) {
         final material = filteredMaterials[index] as MaterialModelWithSubject;
 
-        return Container(
-          margin: EdgeInsets.only(bottom: 12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
-                blurRadius: 8,
-                offset: Offset(0, 3),
-              ),
-            ],
-          ),
-          child: Padding(
-            padding: EdgeInsets.all(16),
-            child: Row(
-              children: [
-                // Thumbnail
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    color: material.color,
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: CachedNetworkImage(
-                      imageUrl: material.thumbnail,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
+        return Obx(() {
+          final isPurchased = myMaterialsController.isMaterialPurchased(material.subject, material.id);
+
+          return Container(
+            margin: EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.1),
+                  blurRadius: 8,
+                  offset: Offset(0, 3),
                 ),
+              ],
+            ),
+            child: GestureDetector(
+              onTap: () {
+                if (material.price > 0 && !isPurchased) {
+                  Get.to(
+                        () => MaterialDetailsPage(material: material,subject: widget.subject,),
+                    transition: Transition.fadeIn,
+                  );
+                } else {
+                  // ADDED: For free materials OR purchased materials, add to recent and open PDF
+                  if (material.type == "pdf" || material.type == "Pdf") {
+                    // ADD TO RECENT MATERIALS BEFORE OPENING
+                    recentController.addRecentMaterial(
+                      materialId: material.id,
+                      title: material.noteName,
+                      subject: material.subject,
+                      type: material.type,
+                      thumbnail: material.thumbnail,
+                      source: material.source,
+                      price: material.price.toDouble(),
+                    );
 
-                SizedBox(width: 16),
-
-                // Content
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Subject and Module
-                      Row(
-                        children: [
-                          Container(
-                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: material.color,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              material.subject,
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
+                    Get.to(() => PremiumPdfViewPage(
+                      url: material.source,
+                      title: material.noteName,
+                      materialId: material.id,
+                      subject: material.subject,
+                    ));
+                  }
+                }
+              },
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    // Thumbnail with recent indicator overlay
+                    Stack(
+                      children: [
+                        Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            color: material.color,
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: CachedNetworkImage(
+                              imageUrl: material.thumbnail,
+                              fit: BoxFit.cover,
                             ),
                           ),
-                          SizedBox(width: 8),
-                          Container(
-                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[200],
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              'Module ${material.module}',
-                              style: TextStyle(
-                                color: Colors.grey[700],
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      SizedBox(height: 8),
-
-                      // Title
-                      Text(
-                        material.noteName,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[800],
                         ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
 
-                      SizedBox(height: 8),
+                        // ADDED: Recent indicator overlay
+                        Obx(() {
+                          final isInRecent = recentController.isInRecent(material.id);
+                          return isInRecent
+                              ? Positioned(
+                            top: 4,
+                            right: 4,
+                            child: Container(
+                              padding: EdgeInsets.all(2),
+                              decoration: BoxDecoration(
+                                color: Colors.orange,
+                                borderRadius: BorderRadius.circular(100),
+                              ),
+                              child: Icon(
+                                Icons.history,
+                                size: 12,
+                                color: Colors.white,
+                              ),
+                            ),
+                          )
+                              : SizedBox.shrink();
+                        }),
+                      ],
+                    ),
 
-                      // Type and Price
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    SizedBox(width: 16),
+
+                    // Content
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // Subject and Module
                           Row(
                             children: [
-                              Icon(Icons.description, size: 16, color: Colors.grey[600]),
-                              SizedBox(width: 4),
-                              Text(
-                                material.type,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey[600],
+                              Container(
+                                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: material.color,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  material.subject,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
-                              SizedBox(width: 16),
-                              Text(
-                                material.price == 0 ? '' : '₹${material.price}',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: material.color,
+                              SizedBox(width: 8),
+                              Container(
+                                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[200],
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  'Module ${material.module}',
+                                  style: TextStyle(
+                                    color: Colors.grey[700],
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                             ],
                           ),
-                          GestureDetector(
-                            onTap: () async {
-                              Future.delayed(Duration.zero, () async {
-                                await bookmarkController.removeBookmarkedId(
-                                  subject: material.subject,
-                                  id: material.id,
-                                );
-                                await fetchBookmarkedMaterials();
-                              });
-                            },
-                            child: Container(
-                              padding: EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.red[50],
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Icon(
-                                Icons.bookmark_remove,
-                                color: Colors.red,
-                                size: 20,
-                              ),
+
+                          SizedBox(height: 8),
+
+                          // Title
+                          Text(
+                            material.noteName,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey[800],
                             ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+
+                          SizedBox(height: 8),
+
+                          // Type and Price
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(Icons.description, size: 16, color: Colors.grey[600]),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    material.type,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                  SizedBox(width: 16),
+
+                                  if (material.price > 0)
+                                    Container(
+                                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: isPurchased ? Colors.green : material.color,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: isPurchased
+                                          ? Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.check_circle,
+                                            size: 14,
+                                            color: Colors.white,
+                                          ),
+                                          SizedBox(width: 4),
+                                          Text(
+                                            'PURCHASED',
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ],
+                                      )
+                                          : Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            '₹${material.price}',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              GestureDetector(
+                                onTap: () async {
+                                  // FIXED: Prevent listener trigger during bookmark removal
+                                  _isListenerActive = true;
+                                  await bookmarkController.removeBookmarkedId(
+                                    subject: material.subject,
+                                    id: material.id,
+                                  );
+                                  await fetchBookmarkedMaterials();
+                                  _isListenerActive = false;
+                                },
+                                child: Container(
+                                  padding: EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red[50],
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Icon(
+                                    Icons.bookmark_remove,
+                                    color: Colors.red,
+                                    size: 20,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ),
-        );
+          );
+        });
       },
     );
   }
+
+  // Rest of your existing methods remain the same...
+  // (buildEmptyState, buildActiveFilterChips, _hasActiveFilters, _showFilterBottomSheet, _showClearAllDialog)
 
   // Build Empty State
   Widget _buildEmptyState() {
@@ -849,7 +1082,7 @@ class _MyBookmarksState extends State<MyBookmarks> {
   // Build Active Filter Chips
   Widget _buildActiveFilterChips() {
     return Container(
-      margin: EdgeInsets.only(bottom: 6,top: 8),
+      margin: EdgeInsets.only(bottom: 6, top: 8),
       height: 40,
       child: ListView(
         scrollDirection: Axis.horizontal,
@@ -923,7 +1156,7 @@ class _MyBookmarksState extends State<MyBookmarks> {
             GestureDetector(
               onTap: () {
                 setState(() {
-                  selectedSubject = widget.subject; // Reset to initial subject parameter
+                  selectedSubject = widget.subject;
                   selectedModules.clear();
                   selectedTypes.clear();
                   selectedPriceFilter = '';
@@ -955,39 +1188,7 @@ class _MyBookmarksState extends State<MyBookmarks> {
         selectedPriceFilter.isNotEmpty;
   }
 
-  // Show Subject Filter Dialog
-  void _showSubjectFilter() {
-    final subjects = ['All'] + _getUniqueSubjects();
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Filter by Subject'),
-        content: Container(
-          width: double.maxFinite,
-          height: 300,
-          child: ListView(
-            children: subjects.map((subject) => RadioListTile<String>(
-              title: Text(subject),
-              subtitle: subject != 'All'
-                  ? Text('${bookmarkedMaterials.where((m) => (m as MaterialModelWithSubject).subject == subject).length} materials')
-                  : Text('All bookmarked materials'),
-              value: subject,
-              groupValue: selectedSubject,
-              onChanged: (value) {
-                setState(() {
-                  selectedSubject = value!;
-                });
-                Navigator.pop(context);
-              },
-            )).toList(),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // Show Filter Bottom Sheet with Subject Filter
+  // Show Filter Bottom Sheet
   void _showFilterBottomSheet() {
     Set<String> availableTypes = bookmarkedMaterials.map((m) => m.type).toSet();
     final subjects = ['All'] + _getUniqueSubjects();
@@ -1053,7 +1254,7 @@ class _MyBookmarksState extends State<MyBookmarks> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Subject Filter Section (NEW)
+                      // Subject Filter Section
                       Text(
                         'Subject',
                         style: TextStyle(
@@ -1321,10 +1522,11 @@ class _MyBookmarksState extends State<MyBookmarks> {
           ),
           TextButton(
             onPressed: () async {
-              Future.delayed(Duration.zero, () async {
-                await bookmarkController.clearAllBookmarks();
-                await fetchBookmarkedMaterials();
-              });
+              // FIXED: Prevent listener trigger during clear all
+              _isListenerActive = true;
+              await bookmarkController.clearAllBookmarks();
+              await fetchBookmarkedMaterials();
+              _isListenerActive = false;
               Navigator.pop(context);
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
@@ -1350,6 +1552,7 @@ class MaterialModelWithSubject extends MaterialModel {
     required super.color,
     required super.module,
     required this.subject,
+    required super.description,
   });
 
   factory MaterialModelWithSubject.fromMaterial(MaterialModel material, String subject) {
@@ -1363,6 +1566,7 @@ class MaterialModelWithSubject extends MaterialModel {
       color: material.color,
       module: material.module,
       subject: subject,
+      description: material.description,
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../models/for_you_model.dart';
 
 
@@ -16,8 +17,12 @@ Widget forYouCard(ForYouModel forYou) {
         color: Colors.white,
       ),
       child: GestureDetector(
-        onTap: (){
-          print(Get.height);
+        onTap: () async {
+          final Uri url = Uri.parse(forYou.src);
+          if (!await launchUrl(url)) {
+            Get.snackbar("Can't Open !", "The source is can not be opened");
+            throw Exception('Could not launch $url');
+          }
         },
         child: ClipRRect(
           borderRadius: BorderRadius.circular(18),

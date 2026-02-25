@@ -5,8 +5,16 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:studyco_app/Utilities/variables/app_colors.dart';
 import 'package:studyco_app/pages/home/home_screen.dart';
 import 'package:studyco_app/pages/login/profile_fill.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../controllers/authcontroller.dart';
+import '../../controllers/bookmark/bookmarkController.dart';
+import '../../controllers/cart/cart_controller.dart';
+import '../../controllers/downloads/save_controller.dart';
+import '../../controllers/myMaterials/my_materials_controller.dart';
+import '../../controllers/profile/profileController.dart';
+import '../../controllers/recentOpenings/recent_openings_controller.dart';
 import '../../controllers/single_device_controller.dart';
+import '../../controllers/subjectController/getMaterialsWithSubjects.dart';
 import '../../pages/login/login_screen.dart';
 import '../../pages/login/phone_auth_screen.dart';
 import '../functions/firebase/google_signin.dart';
@@ -16,6 +24,16 @@ class LandLoginWidget extends StatelessWidget {
   LandLoginWidget({super.key});
 
   final AuthController authController = Get.find<AuthController>();
+  final String privacyPolicyUrl = "https://studyco.online/privacry-policy";
+
+  Future<void> _launchPrivacyPolicy() async {
+    final Uri url = Uri.parse(privacyPolicyUrl);
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      throw "Could not launch $privacyPolicyUrl";
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -58,6 +76,12 @@ class LandLoginWidget extends StatelessWidget {
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   Get.back();
                   Get.put(SessionController());
+                  Get.put(BookmarkController());
+                  Get.put(UserProfileController());
+                  Get.put(MyMaterialsController());
+                  Get.put(MaterialsWithSubjectsController());
+                  Get.put(SecureDownloadManager());
+                  Get.put(RecentMaterialsController());
                   Get.offAll(() => const HomeScreen());
                 });
               }else if(authController.login.value == 2){
@@ -160,8 +184,8 @@ class LandLoginWidget extends StatelessWidget {
                       decoration: TextDecoration.underline,
                     ),
                     recognizer: TapGestureRecognizer()
-                      ..onTap = () {
-                        // Get.to(() => PrivacyPolicyScreen());
+                      ..onTap = () async {
+                        await _launchPrivacyPolicy();
                       },
                   ),
                 ],

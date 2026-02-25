@@ -3,11 +3,18 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:studyco_app/Utilities/components/proggress_dialog.dart';
+import 'package:studyco_app/controllers/profile/profileController.dart';
+import 'package:studyco_app/controllers/recentOpenings/recent_openings_controller.dart';
 import 'package:studyco_app/controllers/single_device_controller.dart';
+import 'package:studyco_app/controllers/subjectController/getMaterialsWithSubjects.dart';
 
 import '../Utilities/functions/deviceid.dart';
 import '../pages/home/home_screen.dart';
 import 'ban_account_controller.dart';
+import 'bookmark/bookmarkController.dart';
+import 'cart/cart_controller.dart';
+import 'downloads/save_controller.dart';
+import 'myMaterials/my_materials_controller.dart';
 
 class AuthController extends GetxController {
   // 0 not login
@@ -42,9 +49,16 @@ class AuthController extends GetxController {
             'education': {'class': sem, 'course': course, 'stream': stream},
           });
       Get.back();
-      Get.offAll(() => const HomeScreen());
       Get.put(BanController());
       Get.put(SessionController());
+      Get.put(BookmarkController());
+      Get.put(UserProfileController());
+      Get.put(MyMaterialsController());
+      Get.put(MaterialsWithSubjectsController());
+      Get.put(SecureDownloadManager());
+      Get.put(RecentMaterialsController());
+      Get.offAll(() => const HomeScreen());
+
       Get.snackbar(
         'Success',
         'Authentication completed',

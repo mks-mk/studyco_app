@@ -58,8 +58,13 @@ dependencies:
   crypto: ^3.0.6
   dio: ^5.8.0+1
   permission_handler: ^11.0.1
-  razorpay_flutter: ^1.4.0
   cloud_functions: ^5.5.2
+  firebase_messaging: ^15.2.10
+  timeago: ^3.7.1
+  sms_autofill: ^2.4.1
+  awesome_notifications: ^0.10.1
+  in_app_purchase: ^3.2.3
+  flutter_staggered_animations: ^1.1.1
 
 dev_dependencies:
   flutter_test:

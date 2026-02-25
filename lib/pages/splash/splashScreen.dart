@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:studyco_app/controllers/profile/profileController.dart';
 import 'package:studyco_app/pages/home/home_screen.dart';
 import 'package:studyco_app/pages/login/profile_fill.dart';
 import '../../Utilities/components/land_login_widget.dart';
@@ -12,7 +13,11 @@ import '../../Utilities/functions/firebase/device_check.dart';
 import '../../controllers/ban_account_controller.dart';
 import '../../controllers/bookmark/bookmarkController.dart';
 import '../../controllers/cart/cart_controller.dart';
+import '../../controllers/downloads/save_controller.dart';
+import '../../controllers/myMaterials/my_materials_controller.dart';
+import '../../controllers/recentOpenings/recent_openings_controller.dart';
 import '../../controllers/single_device_controller.dart';
+import '../../controllers/subjectController/getMaterialsWithSubjects.dart';
 
 class Splashscreen extends StatefulWidget {
   const Splashscreen({super.key});
@@ -38,7 +43,6 @@ class _SplashscreenState extends State<Splashscreen>
   void initState() {
     SystemChrome.setSystemUIOverlayStyle(
       SystemUiOverlayStyle(
-        statusBarColor: Colors.white,
         statusBarIconBrightness: Brightness.dark,
         statusBarBrightness: Brightness.dark,
         systemNavigationBarColor: Colors.white,
@@ -114,8 +118,12 @@ class _SplashscreenState extends State<Splashscreen>
     } else {
       Get.put(SessionController());
       Get.put(BookmarkController());
-      Get.put(CartController());
-      Get.to(() => const HomeScreen());
+      Get.put(UserProfileController());
+      Get.put(MyMaterialsController());
+      Get.put(MaterialsWithSubjectsController());
+      Get.put(SecureDownloadManager());
+      Get.put(RecentMaterialsController());
+      Get.offAll(() => const HomeScreen());
     }
   }
 

@@ -4,17 +4,22 @@ import 'package:flutter/material.dart';
 import 'package:no_screenshot/no_screenshot.dart';
 import 'package:pdfrx/pdfrx.dart';
 import 'package:get/get.dart';
+import 'package:studyco_app/controllers/bookmark/bookmarkController.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class PremiumPdfViewPage extends StatefulWidget {
   final String url;
   final String? title;
   final bool isOfflineFile;
+  final String materialId;
+  final String subject;
 
   const PremiumPdfViewPage({
     super.key,
     required this.url,
     this.title,
+    this.materialId = 'null',
+    this.subject = 'null',
     this.isOfflineFile = false,
   });
 
@@ -34,6 +39,8 @@ class _PremiumPdfViewPageState extends State<PremiumPdfViewPage> {
   // ADD: Variables for offline file handling
   Uint8List? _documentBytes;
   bool _isLoadingOfflineFile = false;
+
+  final bookmarkController = Get.find<BookmarkController>();
 
   Future<void> secureScreen() async {
     await _noScreenshot.screenshotOff();
@@ -152,7 +159,6 @@ class _PremiumPdfViewPageState extends State<PremiumPdfViewPage> {
       ),
       body: Stack(
         children: [
-
           _buildPdfViewer(),
 
           // Premium Control Overlay
@@ -285,9 +291,9 @@ class _PremiumPdfViewPageState extends State<PremiumPdfViewPage> {
   // Your existing methods remain exactly the same...
   Widget _buildPremiumLoadingIndicator(int bytesDownloaded, int? totalBytes) {
     final progress =
-    totalBytes != null && totalBytes > 0
-        ? bytesDownloaded / totalBytes
-        : null;
+        totalBytes != null && totalBytes > 0
+            ? bytesDownloaded / totalBytes
+            : null;
 
     return Container(
       color: Colors.black87,
@@ -409,19 +415,32 @@ class _PremiumPdfViewPageState extends State<PremiumPdfViewPage> {
           children: [
             // Previous Page
             _buildControlButton(
-              icon: Icons.navigate_before,
+              icon: Icons.navigate_before, 
               label: '',
               onPressed:
-              _currentPage > 1 ? () => _goToPage(_currentPage - 1) : null,
+                  _currentPage > 1 ? () => _goToPage(_currentPage - 1) : null,
             ),
 
             // Zoom Controls
-           if(widget.isOfflineFile == false)
-             _buildControlButton(
-               icon: Icons.bookmark_add_outlined,
-               label: 'Bookmark',
-               onPressed: (){},
-             ),
+            if (widget.isOfflineFile == false)
+              Obx(
+                ()=> _buildControlButton(
+                  icon:
+                      bookmarkController.isBookmarked(
+                            subject: widget.subject,
+                            id: widget.materialId,
+                          )
+                          ? Icons.bookmark_added_rounded
+                          : Icons.bookmark_add_outlined,
+                  label: 'Bookmark',
+                  onPressed: () async {
+                    await bookmarkController.toggleBookmark(
+                      subject: widget.subject,
+                      id: widget.materialId,
+                    );
+                  },
+                ),
+              ),
             _buildControlButton(
               icon: Icons.zoom_out,
               label: 'Zoom Out',
@@ -445,9 +464,9 @@ class _PremiumPdfViewPageState extends State<PremiumPdfViewPage> {
               icon: Icons.navigate_next,
               label: '',
               onPressed:
-              _currentPage < _totalPages
-                  ? () => _goToPage(_currentPage + 1)
-                  : null,
+                  _currentPage < _totalPages
+                      ? () => _goToPage(_currentPage + 1)
+                      : null,
             ),
           ],
         ),
@@ -466,9 +485,9 @@ class _PremiumPdfViewPageState extends State<PremiumPdfViewPage> {
         padding: EdgeInsets.symmetric(vertical: 8, horizontal: 8),
         decoration: BoxDecoration(
           color:
-          onPressed != null
-              ? Colors.white.withOpacity(0.1)
-              : Colors.grey.withOpacity(0.1),
+              onPressed != null
+                  ? Colors.white.withOpacity(0.1)
+                  : Colors.grey.withOpacity(0.1),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Column(
@@ -559,46 +578,46 @@ class _PremiumPdfViewPageState extends State<PremiumPdfViewPage> {
       context: context,
       builder:
           (context) => AlertDialog(
-        backgroundColor: Colors.grey[800],
-        title: Text('Go to Page', style: TextStyle(color: Colors.white)),
-        content: TextField(
-          controller: pageController,
-          keyboardType: TextInputType.number,
-          style: TextStyle(color: Colors.white),
-          decoration: InputDecoration(
-            labelText: 'Page Number (1-$_totalPages)',
-            labelStyle: TextStyle(color: Colors.grey[400]),
-            border: OutlineInputBorder(),
-            enabledBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: Colors.grey[600]!),
+            backgroundColor: Colors.grey[800],
+            title: Text('Go to Page', style: TextStyle(color: Colors.white)),
+            content: TextField(
+              controller: pageController,
+              keyboardType: TextInputType.number,
+              style: TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                labelText: 'Page Number (1-$_totalPages)',
+                labelStyle: TextStyle(color: Colors.grey[400]),
+                border: OutlineInputBorder(),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey[600]!),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.blue),
+                ),
+              ),
             ),
-            focusedBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: Colors.blue),
-            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(
+                  'Cancel',
+                  style: TextStyle(color: Colors.grey[400]),
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  final pageNumber = int.tryParse(pageController.text);
+                  if (pageNumber != null &&
+                      pageNumber >= 1 &&
+                      pageNumber <= _totalPages) {
+                    _goToPage(pageNumber);
+                    Navigator.pop(context);
+                  }
+                },
+                child: Text('Go', style: TextStyle(color: Colors.blue)),
+              ),
+            ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Cancel',
-              style: TextStyle(color: Colors.grey[400]),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              final pageNumber = int.tryParse(pageController.text);
-              if (pageNumber != null &&
-                  pageNumber >= 1 &&
-                  pageNumber <= _totalPages) {
-                _goToPage(pageNumber);
-                Navigator.pop(context);
-              }
-            },
-            child: Text('Go', style: TextStyle(color: Colors.blue)),
-          ),
-        ],
-      ),
     );
   }
 }

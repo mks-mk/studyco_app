@@ -262,8 +262,16 @@ class _ProfileFillScreenState extends State<ProfileFillScreen> {
               child: GradientBG(
                 onTap: () async {
                  if(selectedCourse != null && selectedGroup != null && selectedSemester != null && nameController.text.isNotEmpty && nameController.text != ''){
-                   GetStorage().write('class', "${selectedCourse}_$selectedGroup");
-                   GetStorage().write('sem', "S${semesters.indexOf(selectedSemester ?? '') + 1}");
+                   if(selectedSemester == '1st Semester'){
+                     GetStorage().write('sem', "S${semesters.indexOf(selectedSemester ?? '') + 1}");
+                     GetStorage().write('class', "${selectedCourse}_A");
+
+                   }else{
+                     GetStorage().write('sem', "S${semesters.indexOf(selectedSemester ?? '') + 1}");
+                     GetStorage().write('class', "${selectedCourse}_$selectedGroup");
+
+                   }
+
                    await Get.find<AuthController>().saveProfile(
                      name: nameController.text,
                      course: selectedCourse ?? '',

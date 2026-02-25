@@ -10,7 +10,9 @@ import '../../bindings/bookmark_binding.dart';
 import '../../controllers/downloads/save_controller.dart';
 import '../../controllers/subjectController/getMaterialsWithSubjects.dart';
 import '../../controllers/cart/cart_controller.dart';
+import '../../controllers/myMaterials/my_materials_controller.dart';
 import '../../models/material_model.dart';
+import '../carts/material_details_page.dart';
 import '../downlod/downloads_page.dart';
 import '../pdf_viewer/pdf_view_page.dart';
 import 'my_bookmarks_page.dart';
@@ -57,7 +59,7 @@ class _MaterialsPageState extends State<MaterialsPage> {
 
     // Initialize download and cart managers
     Get.put(SecureDownloadManager());
-    Get.put(CartController());
+    Get.find<MyMaterialsController>();
 
     // Use addPostFrameCallback to ensure proper initialization
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -92,7 +94,8 @@ class _MaterialsPageState extends State<MaterialsPage> {
       child: LiquidPullToRefresh(
         key: refreshIndicatorKey,
         onRefresh: () async {
-          await materialsController.refreshMaterials(subject: widget.subject);
+          materialsController.refreshMaterials(subject: widget.subject);
+          await Get.find<MyMaterialsController>().fetchMyMaterials();
         },
         backgroundColor: AppColor.backgroundColor,
         color: Colors.orange,
@@ -466,10 +469,10 @@ class _MaterialsPageState extends State<MaterialsPage> {
     );
   }
 
-  // Build Grid View with cart integration
+  // UPDATED: Build Grid View with purchase check and cart integration
   Widget _buildGridView() {
     final downloadManager = Get.find<SecureDownloadManager>();
-    final cartController = Get.find<CartController>();
+    final myMaterialsController = Get.find<MyMaterialsController>();
 
     return GridView.builder(
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.manual,
@@ -486,237 +489,238 @@ class _MaterialsPageState extends State<MaterialsPage> {
         final filteredMaterials = _getFilteredMaterials();
         final material = filteredMaterials[index];
 
-        return GestureDetector(
-          onTap: () {
-            // MODIFIED: Handle paid vs free materials differently
-            if (material.price > 0) {
-              // For paid materials, add to cart instead of opening PDF
-              cartController.addToCart(
-                materialId: material.id,
-                title: material.noteName,
-                subject: widget.subject,
-                price: material.price.toDouble(),
-                thumbnail: material.thumbnail,
-                type: material.type,
-              );
-            } else {
-              // For free materials, open PDF as usual
-              if (material.type == "pdf" || material.type == "Pdf") {
+        return Obx(() {
+          // ADDED: Check if material is purchased
+          final isPurchased = myMaterialsController.isMaterialPurchased(widget.subject, material.id);
+
+          return GestureDetector(
+            onTap: () {
+              if (material.price > 0 && !isPurchased) {
                 Get.to(
-                      () => PremiumPdfViewPage(
-                    url: material.source,
-                    title: material.noteName,
-                  ),
+                      () => MaterialDetailsPage(material: material,subject: widget.subject,),
+                  transition: Transition.fadeIn,
                 );
+              } else {
+                // For free materials OR purchased materials, open PDF
+                if (material.type == "pdf" || material.type == "Pdf") {
+                  Get.to(
+                        () => PremiumPdfViewPage(
+                      url: material.source,
+                      title: material.noteName,
+                          materialId: material.id,
+                          subject: widget.subject,
+                    ),
+                  );
+                }
               }
-            }
-          },
-          child: SizedBox(
-            width: 190,
-            height: 200,
-            child: Card(
-              color: material.color,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: Column(
-                children: [
-                  SizedBox(height: 4),
-                  Container(
-                    width: 150,
-                    height: 160,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: CachedNetworkImage(
-                        imageUrl: material.thumbnail,
-                        fit: BoxFit.fill,
+            },
+            child: SizedBox(
+              width: 190,
+              height: 200,
+              child: Card(
+                color: material.color,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Column(
+                  children: [
+                    SizedBox(height: 4),
+                    Container(
+                      width: 150,
+                      height: 160,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: CachedNetworkImage(
+                          imageUrl: material.thumbnail,
+                          fit: BoxFit.fill,
+                        ),
                       ),
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(
-                      top: 2.0,
-                      left: 8,
-                      right: 8,
-                    ),
-                    child: Text(
-                      material.noteName,
-                      maxLines: 2,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: material.color.computeLuminance() > 0.5
-                            ? Colors.black
-                            : Colors.white,
-                        overflow: TextOverflow.ellipsis,
+                    Padding(
+                      padding: const EdgeInsets.only(
+                        top: 2.0,
+                        left: 8,
+                        right: 8,
+                      ),
+                      child: Text(
+                        material.noteName,
+                        maxLines: 2,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: material.color.computeLuminance() > 0.5
+                              ? Colors.black
+                              : Colors.white,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ),
-                  ),
-                  Row(
-                    mainAxisAlignment: material.price != 0
-                        ? MainAxisAlignment.spaceBetween
-                        : MainAxisAlignment.end,
-                    children: [
-                      // MODIFIED: Price container with cart indicator (no click handler)
-                      material.price != 0
-                          ? Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        margin: EdgeInsets.only(
-                          left: 8,
-                          right: 8,
-                          bottom: 8,
-                          top: 4,
-                        ),
-                        child: Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(4.0),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  " ₹${material.price} ",
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.black,
-                                  ),
-                                ),
-                                // MODIFIED: Cart indicator icon (shows if in cart)
-                                Obx(() {
-                                  final isInCart = cartController.isInCart(material.id);
-                                  return isInCart
-                                      ? Icon(
-                                    Icons.shopping_cart,
+                    Row(
+                      mainAxisAlignment: material.price != 0
+                          ? MainAxisAlignment.spaceBetween
+                          : MainAxisAlignment.end,
+                      children: [
+                        // UPDATED: Price container or purchased badge
+                        material.price != 0
+                            ? Container(
+                          decoration: BoxDecoration(
+                            color: isPurchased ? Colors.green : Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          margin: EdgeInsets.only(
+                            left: 8,
+                            right: 8,
+                            bottom: 8,
+                            top: 4,
+                          ),
+                          child: Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(4.0),
+                              child: isPurchased
+                                  ? Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.shopping_bag_rounded,
                                     size: 16,
-                                    color: Colors.green,
-                                  )
-                                      : SizedBox.shrink();
-                                }),
-                              ],
+                                    color: Colors.white,
+                                  ),
+                                ],
+                              )
+                                  : Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    " ₹${material.price} ",
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                      )
-                          : SizedBox.shrink(),
+                        )
+                            : SizedBox.shrink(),
 
-                      // Action buttons row
-                      Row(
-                        children: [
-                          // Download button (only for free and non-link materials)
-                          if (material.price == 0 && material.type.toLowerCase() != 'link')
-                            Obx(() {
-                              final isDownloaded = downloadManager.isMaterialDownloaded(material.id);
-                              final activeDownload = downloadManager.activeDownloads
-                                  .firstWhereOrNull((d) => d.materialId == material.id);
+                        // Action buttons row
+                        Row(
+                          children: [
+                            // UPDATED: Download button (for free materials OR purchased materials, not links)
+                            if ((material.price == 0 || isPurchased) && material.type.toLowerCase() != 'link')
+                              Obx(() {
+                                final isDownloaded = downloadManager.isMaterialDownloaded(material.id);
+                                final activeDownload = downloadManager.activeDownloads
+                                    .firstWhereOrNull((d) => d.materialId == material.id);
 
-                              return GestureDetector(
-                                onTap: () async {
-                                  if (isDownloaded) {
-                                    // Navigate to offline materials
-                                    Get.to(() => OfflineMaterialsPage());
-                                  } else if (activeDownload == null) {
-                                    // Start download
-                                    await downloadManager.downloadMaterial(
-                                      materialId: material.id,
-                                      title: material.noteName,
-                                      subject: widget.subject,
-                                      downloadUrl: material.source,
-                                      materialType: material.type,
-                                      thumbnailUrl: material.thumbnail,
-                                    );
-                                  }
-                                },
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(100),
-                                  ),
-                                  margin: EdgeInsets.only(
-                                    left: 4,
-                                    right: 4,
-                                    bottom: 8,
-                                  ),
-                                  child: Center(
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(4.0),
-                                      child: activeDownload != null
-                                          ? SizedBox(
-                                        width: 16,
-                                        height: 16,
-                                        child: CircularProgressIndicator(
-                                          value: activeDownload.progress,
-                                          strokeWidth: 2,
-                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                                return GestureDetector(
+                                  onTap: () async {
+                                    if (isDownloaded) {
+                                      // Navigate to offline materials
+                                      Get.to(() => OfflineMaterialsPage());
+                                    } else if (activeDownload == null) {
+                                      // Start download
+                                      await downloadManager.downloadMaterial(
+                                        materialId: material.id,
+                                        title: material.noteName,
+                                        subject: widget.subject,
+                                        downloadUrl: material.source,
+                                        materialType: material.type,
+                                        thumbnailUrl: material.thumbnail,
+                                      );
+                                    }
+                                  },
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(100),
+                                    ),
+                                    margin: EdgeInsets.only(
+                                      left: 4,
+                                      right: 4,
+                                      bottom: 8,
+                                    ),
+                                    child: Center(
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(4.0),
+                                        child: activeDownload != null
+                                            ? SizedBox(
+                                          width: 16,
+                                          height: 16,
+                                          child: CircularProgressIndicator(
+                                            value: activeDownload.progress,
+                                            strokeWidth: 2,
+                                            valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                                          ),
+                                        )
+                                            : Icon(
+                                          isDownloaded ? Icons.download_done : Icons.download,
+                                          size: 20,
+                                          color: isDownloaded ? Colors.green : Colors.black,
                                         ),
-                                      )
-                                          : Icon(
-                                        isDownloaded ? Icons.download_done : Icons.download,
-                                        size: 20,
-                                        color: isDownloaded ? Colors.green : Colors.black,
                                       ),
                                     ),
                                   ),
-                                ),
-                              );
-                            }),
+                                );
+                              }),
 
-                          // Bookmark button
-                          GestureDetector(
-                            onTap: () async {
-                              await materialsController.toggleBookmark(
-                                subject: widget.subject,
-                                id: material.id,
-                              );
-                            },
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(100),
-                              ),
-                              margin: EdgeInsets.only(
-                                left: 4,
-                                right: 8,
-                                bottom: 8,
-                              ),
-                              child: Center(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(4.0),
-                                  child: Obx(() => Icon(
-                                    materialsController.isBookmarked(
-                                      subject: widget.subject,
-                                      id: material.id,
-                                    )
-                                        ? Icons.bookmark_added_rounded
-                                        : Icons.bookmark_add_outlined,
-                                    size: 20,
-                                  )),
+                            // Bookmark button
+                            GestureDetector(
+                              onTap: () async {
+                                await materialsController.toggleBookmark(
+                                  subject: widget.subject,
+                                  id: material.id,
+                                );
+                              },
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(100),
+                                ),
+                                margin: EdgeInsets.only(
+                                  left: 4,
+                                  right: 8,
+                                  bottom: 8,
+                                ),
+                                child: Center(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(4.0),
+                                    child: Obx(() => Icon(
+                                      materialsController.isBookmarked(
+                                        subject: widget.subject,
+                                        id: material.id,
+                                      )
+                                          ? Icons.bookmark_added_rounded
+                                          : Icons.bookmark_add_outlined,
+                                      size: 20,
+                                    )),
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        );
+          );
+        });
       },
     );
   }
 
-
+  // UPDATED: Build List View with purchase check and cart integration
   Widget _buildListView() {
     final downloadManager = Get.find<SecureDownloadManager>();
-    final cartController = Get.find<CartController>();
+    final myMaterialsController = Get.find<MyMaterialsController>(); // ADD THIS
 
     return ListView.builder(
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.manual,
@@ -726,279 +730,291 @@ class _MaterialsPageState extends State<MaterialsPage> {
         final filteredMaterials = _getFilteredMaterials();
         final material = filteredMaterials[index];
 
-        return GestureDetector(
-          onTap: () {
-            // MODIFIED: Handle paid vs free materials differently
-            if (material.price > 0) {
-              // For paid materials, add to cart instead of opening PDF
-              cartController.addToCart(
-                materialId: material.id,
-                title: material.noteName,
-                subject: widget.subject,
-                price: material.price.toDouble(),
-                thumbnail: material.thumbnail,
-                type: material.type,
-              );
-            } else {
-              // For free materials, open PDF as usual
-              if (material.type == "pdf" || material.type == "Pdf") {
-                Get.to(
-                      () => PremiumPdfViewPage(
-                    url: material.source,
-                    title: material.noteName,
-                  ),
-                );
-              }
-            }
-          },
-          child: Container(
-            margin: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: material.color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: material.color.withOpacity(0.3),
-                width: 1,
-              ),
-            ),
-            child: Padding(
-              padding: EdgeInsets.all(10),
-              child: Row(
-                children: [
-                  // Thumbnail
-                  Container(
-                    width: 80,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      color: material.color,
+        return Obx(() {
+          // ADDED: Check if material is purchased
+          final isPurchased = myMaterialsController.isMaterialPurchased(widget.subject, material.id);
+
+          return GestureDetector(
+            onTap: () {
+              // UPDATED: Handle different material states
+              if (material.price > 0 && !isPurchased) {
+                // For unpurchased paid materials, add to cart
+                // cartController.addToCart(
+                //   materialId: material.id,
+                //   title: material.noteName,
+                //   subject: widget.subject,
+                //   price: material.price.toDouble(),
+                //   thumbnail: material.thumbnail,
+                //   type: material.type,
+                // );
+              } else {
+                // For free materials OR purchased materials, open PDF
+                if (material.type == "pdf" || material.type == "Pdf") {
+                  Get.to(
+                        () => PremiumPdfViewPage(
+                      url: material.source,
+                      title: material.noteName,
                     ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: CachedNetworkImage(
-                        imageUrl: material.thumbnail,
-                        fit: BoxFit.fill,
-                        placeholder: (context, url) => Container(
-                          color: material.color.withOpacity(0.3),
-                          child: Icon(
-                            Icons.image,
-                            color: Colors.white,
-                            size: 30,
+                  );
+                }
+              }
+            },
+            child: Container(
+              margin: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: material.color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: material.color.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              child: Padding(
+                padding: EdgeInsets.all(10),
+                child: Row(
+                  children: [
+                    // Thumbnail
+                    Container(
+                      width: 80,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        color: material.color,
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: CachedNetworkImage(
+                          imageUrl: material.thumbnail,
+                          fit: BoxFit.fill,
+                          placeholder: (context, url) => Container(
+                            color: material.color.withOpacity(0.3),
+                            child: Icon(
+                              Icons.image,
+                              color: Colors.white,
+                              size: 30,
+                            ),
                           ),
-                        ),
-                        errorWidget: (context, url, error) => Container(
-                          color: material.color.withOpacity(0.3),
-                          child: Icon(
-                            Icons.error,
-                            color: Colors.white,
-                            size: 30,
+                          errorWidget: (context, url, error) => Container(
+                            color: material.color.withOpacity(0.3),
+                            child: Icon(
+                              Icons.error,
+                              color: Colors.white,
+                              size: 30,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
 
-                  SizedBox(width: 16),
+                    SizedBox(width: 16),
 
-                  // Content
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Title
-                        Text(
-                          material.noteName,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: material.color,
+                    // Content
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Title
+                          Text(
+                            material.noteName,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: material.color,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
 
-                        SizedBox(height: 4),
+                          SizedBox(height: 4),
 
-                        // Type and Module
-                        Row(
-                          children: [
-                            Container(
-                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: material.color.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                material.type,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: material.color,
+                          // Type and Module
+                          Row(
+                            children: [
+                              Container(
+                                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: material.color.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
-                              ),
-                            ),
-                            SizedBox(width: 8),
-                            Container(
-                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.grey[200],
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                'Module ${material.module}',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.grey[700],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        SizedBox(height: 8),
-
-                        // Price and Actions
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            // MODIFIED: Price with cart indicator (no click handler)
-                            material.price != 0
-                                ? Container(
-                              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: material.color,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    '₹${material.price}',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
+                                child: Text(
+                                  material.type,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: material.color,
                                   ),
-                                  SizedBox(width: 4),
-                                  // MODIFIED: Cart indicator icon (shows if in cart)
-                                  Obx(() {
-                                    final isInCart = cartController.isInCart(material.id);
-                                    return isInCart
-                                        ? Icon(
-                                      Icons.shopping_cart,
+                                ),
+                              ),
+                              SizedBox(width: 8),
+                              Container(
+                                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[200],
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  'Module ${material.module}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.grey[700],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          SizedBox(height: 8),
+
+                          // Price and Actions
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              // UPDATED: Price or purchased badge
+                              material.price != 0
+                                  ? Container(
+                                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: isPurchased ? Colors.green : material.color,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: isPurchased
+                                    ? Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.check_circle,
                                       size: 16,
                                       color: Colors.white,
-                                    )
-                                        : SizedBox.shrink();
-                                  }),
-                                ],
-                              ),
-                            )
-                                : Container(),
-
-                            // Action buttons
-                            Row(
-                              children: [
-                                // Download button (only for free and non-link materials)
-                                if (material.price == 0 && material.type.toLowerCase() != 'link')
-                                  Obx(() {
-                                    final isDownloaded = downloadManager.isMaterialDownloaded(material.id);
-                                    final activeDownload = downloadManager.activeDownloads
-                                        .firstWhereOrNull((d) => d.materialId == material.id);
-
-                                    return GestureDetector(
-                                      onTap: () async {
-                                        if (isDownloaded) {
-                                          // Navigate to offline materials
-                                          Get.to(() => OfflineMaterialsPage());
-                                        } else if (activeDownload == null) {
-                                          // Start download
-                                          await downloadManager.downloadMaterial(
-                                            materialId: material.id,
-                                            title: material.noteName,
-                                            subject: widget.subject,
-                                            downloadUrl: material.source,
-                                            materialType: material.type,
-                                            thumbnailUrl: material.thumbnail,
-                                          );
-                                        }
-                                      },
-                                      child: Container(
-                                        padding: EdgeInsets.all(8),
-                                        margin: EdgeInsets.only(right: 8),
-                                        decoration: BoxDecoration(
-                                          color: material.color.withOpacity(0.1),
-                                          borderRadius: BorderRadius.circular(8),
-                                          border: Border.all(
-                                            color: material.color.withOpacity(0.3),
-                                          ),
-                                        ),
-                                        child: activeDownload != null
-                                            ? SizedBox(
-                                          width: 20,
-                                          height: 20,
-                                          child: CircularProgressIndicator(
-                                            value: activeDownload.progress,
-                                            strokeWidth: 2,
-                                            valueColor: AlwaysStoppedAnimation<Color>(material.color),
-                                          ),
-                                        )
-                                            : Icon(
-                                          isDownloaded ? Icons.download_done : Icons.download,
-                                          size: 20,
-                                          color: isDownloaded ? Colors.green : material.color,
-                                        ),
-                                      ),
-                                    );
-                                  }),
-
-                                // Bookmark button
-                                GestureDetector(
-                                  onTap: () async {
-                                    await materialsController.toggleBookmark(
-                                      subject: widget.subject,
-                                      id: material.id,
-                                    );
-                                  },
-                                  child: Container(
-                                    padding: EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: material.color.withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(
-                                        color: material.color.withOpacity(0.3),
+                                    ),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      'PURCHASED',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
                                       ),
                                     ),
-                                    child: Obx(() => Icon(
-                                      materialsController.isBookmarked(
+                                  ],
+                                )
+                                    : Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      '₹${material.price}',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                                  : Container(),
+
+                              // Action buttons
+                              Row(
+                                children: [
+                                  // UPDATED: Download button (for free materials OR purchased materials, not links)
+                                  if ((material.price == 0 || isPurchased) && material.type.toLowerCase() != 'link')
+                                    Obx(() {
+                                      final isDownloaded = downloadManager.isMaterialDownloaded(material.id);
+                                      final activeDownload = downloadManager.activeDownloads
+                                          .firstWhereOrNull((d) => d.materialId == material.id);
+
+                                      return GestureDetector(
+                                        onTap: () async {
+                                          if (isDownloaded) {
+                                            // Navigate to offline materials
+                                            Get.to(() => OfflineMaterialsPage());
+                                          } else if (activeDownload == null) {
+                                            // Start download
+                                            await downloadManager.downloadMaterial(
+                                              materialId: material.id,
+                                              title: material.noteName,
+                                              subject: widget.subject,
+                                              downloadUrl: material.source,
+                                              materialType: material.type,
+                                              thumbnailUrl: material.thumbnail,
+                                            );
+                                          }
+                                        },
+                                        child: Container(
+                                          padding: EdgeInsets.all(8),
+                                          margin: EdgeInsets.only(right: 8),
+                                          decoration: BoxDecoration(
+                                            color: material.color.withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(8),
+                                            border: Border.all(
+                                              color: material.color.withOpacity(0.3),
+                                            ),
+                                          ),
+                                          child: activeDownload != null
+                                              ? SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: CircularProgressIndicator(
+                                              value: activeDownload.progress,
+                                              strokeWidth: 2,
+                                              valueColor: AlwaysStoppedAnimation<Color>(material.color),
+                                            ),
+                                          )
+                                              : Icon(
+                                            isDownloaded ? Icons.download_done : Icons.download,
+                                            size: 20,
+                                            color: isDownloaded ? Colors.green : material.color,
+                                          ),
+                                        ),
+                                      );
+                                    }),
+
+                                  // Bookmark button
+                                  GestureDetector(
+                                    onTap: () async {
+                                      await materialsController.toggleBookmark(
                                         subject: widget.subject,
                                         id: material.id,
-                                      )
-                                          ? Icons.bookmark_added_rounded
-                                          : Icons.bookmark_add_outlined,
-                                      size: 20,
-                                      color: material.color,
-                                    )),
+                                      );
+                                    },
+                                    child: Container(
+                                      padding: EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: material.color.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: material.color.withOpacity(0.3),
+                                        ),
+                                      ),
+                                      child: Obx(() => Icon(
+                                        materialsController.isBookmarked(
+                                          subject: widget.subject,
+                                          id: material.id,
+                                        )
+                                            ? Icons.bookmark_added_rounded
+                                            : Icons.bookmark_add_outlined,
+                                        size: 20,
+                                        color: material.color,
+                                      )),
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ],
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-        );
+          );
+        });
       },
     );
   }
-
 
   // Get filtered materials
   List<MaterialModel> _getFilteredMaterials() {

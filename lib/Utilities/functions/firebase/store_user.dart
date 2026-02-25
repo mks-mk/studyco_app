@@ -35,11 +35,19 @@ Future<void> addUser({
           final data = doc.data() as Map<String, dynamic>;
           if (data.containsKey('education')) {
             final educationData = data['education'] as Map<String, dynamic>;
-            GetStorage().write(
-              'class',
-              "${educationData['course']}_${educationData['stream']}",
-            );
-            GetStorage().write('sem', "S${educationData['class']}");
+            if(educationData['class'] == 1){
+              GetStorage().write(
+                'class',
+                "${educationData['course']}_A",
+              );
+              GetStorage().write('sem', "S${educationData['class']}");
+            }else{
+              GetStorage().write(
+                'class',
+                "${educationData['course']}_${educationData['stream']}",
+              );
+              GetStorage().write('sem', "S${educationData['class']}");
+            }
           }
         }
         await FirebaseFirestore.instance.collection('users').doc(uid).update({

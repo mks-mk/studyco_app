@@ -9,6 +9,8 @@ class MaterialModel {
   final int module;
   final String type;
   final Color color;
+  final String? description;
+  final String? productID;
 
   MaterialModel({
     required this.id,
@@ -19,6 +21,8 @@ class MaterialModel {
     required this.type,
     required this.color,
     required this.module,
+    required this.description,
+    this.productID,
   });
 
   // Factory constructor with document ID
@@ -26,12 +30,14 @@ class MaterialModel {
     return MaterialModel(
       id: id,
       noteName: map['name'] ?? 'Unknown',
+      productID: map['productID'] ?? '',
       thumbnail: map['image'] ?? '',
       source: map['source'] ?? '',
       price: map['price'] ?? 0,
       type: map['type'] ?? '',
       color: _parseColor(map['color']),
       module: map['module'] ?? 1,
+      description: map['description'] ?? '',
     );
   }
 
@@ -71,6 +77,8 @@ class MaterialModel {
     return {
       'name': noteName,
       'image': thumbnail,
+      'productID': productID,
+      'description': description,
       'source': source,
       'price': price,
       'type': type,
@@ -80,7 +88,7 @@ class MaterialModel {
 
   @override
   String toString() {
-    return 'MaterialModel(id: $id, noteName: $noteName, thumbnail: $thumbnail, color: $color)';
+    return 'MaterialModel(id: $id, noteName: $noteName, thumbnail: $thumbnail, color: $color, description: $description, productID: $productID)';
   }
 
   @override
@@ -93,6 +101,8 @@ class MaterialModel {
         other.source == source &&
         other.price == price &&
         other.type == type &&
+        other.productID == productID &&
+        other.description == description &&
         other.color == color;
   }
 
@@ -104,5 +114,8 @@ class MaterialModel {
       source.hashCode ^
       price.hashCode ^
       type.hashCode ^
+      productID.hashCode ^
+      description.hashCode ^
       color.hashCode;
+
 }

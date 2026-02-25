@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:liquid_pull_to_refresh/liquid_pull_to_refresh.dart';
@@ -13,6 +14,7 @@ import '../../Utilities/variables/app_colors.dart';
 import '../../controllers/profile/profileController.dart';
 import '../../controllers/scrollController.dart';
 import '../downlod/downloads_page.dart';
+import '../login/profile_fill.dart';
 
 class ProfileScreen extends StatelessWidget {
   final ScrollerController scrollControl;
@@ -21,9 +23,8 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final UserProfileController userProfileController = Get.put(
-      UserProfileController(),
-    );
+    final UserProfileController userProfileController =
+        Get.find<UserProfileController>();
     final GlobalKey<LiquidPullToRefreshState> refreshIndicatorKey =
         GlobalKey<LiquidPullToRefreshState>();
 
@@ -98,34 +99,90 @@ class ProfileScreen extends StatelessWidget {
                       child: Row(
                         children: [
                           // Profile Avatar - skeleton-friendly
-                          Container(
-                            width: 60,
-                            height: 60,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[200],
-                              borderRadius: BorderRadius.circular(100),
-                            ),
-                            child:
-                                userProfileController.isLoading.value
-                                    ? Container() // Empty container for skeleton
-                                    : ClipRRect(
-                                      borderRadius: BorderRadius.circular(15),
-                                      child: Image.network(
-                                        userProfileController.profileImageUrl,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (
-                                          context,
-                                          error,
-                                          stackTrace,
-                                        ) {
-                                          return Icon(
-                                            Icons.person,
-                                            size: 30,
-                                            color: Colors.grey[600],
-                                          );
-                                        },
-                                      ),
+                          // Wrap your original widget in a Stack to place the camera icon on top
+                          Stack(
+                            children: [
+                              // Your original container for the profile image
+                              Container(
+                                width: 60,
+                                height: 60,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[200],
+                                  shape:
+                                      BoxShape
+                                          .circle, // Using BoxShape.circle is cleaner
+                                ),
+                                // Use ClipOval for perfect circular clipping of the child
+                                child: ClipOval(
+                                  // AnimatedSwitcher fades between the loading indicator and the image
+                                  child: AnimatedSwitcher(
+                                    duration: const Duration(milliseconds: 400),
+                                    transitionBuilder:
+                                        (child, animation) => FadeTransition(
+                                          opacity: animation,
+                                          child: child,
+                                        ),
+                                    child:
+                                        userProfileController.isLoading.value
+                                            // 1. Show a progress indicator while loading
+                                            ? Container(
+                                              // Use a key to help AnimatedSwitcher identify the change
+                                              key: const ValueKey('loading'),
+                                              padding: const EdgeInsets.all(
+                                                18.0,
+                                              ),
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                color: Colors.grey[400],
+                                              ),
+                                            )
+                                            // 2. Show the image when loaded
+                                            : Image.network(
+                                              // Use a key to help AnimatedSwitcher identify the change
+                                              key: const ValueKey('image'),
+                                              userProfileController
+                                                  .profileImageUrl,
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (
+                                                context,
+                                                error,
+                                                stackTrace,
+                                              ) {
+                                                return Icon(
+                                                  Icons.person,
+                                                  size: 30,
+                                                  color: Colors.grey[600],
+                                                );
+                                              },
+                                            ),
+                                  ),
+                                ),
+                              ),
+                              // 3. The Camera Icon, positioned on top of the Stack
+                              userProfileController.isVerified.value ? Positioned(
+                                bottom: 0,
+                                right: -5,
+                                child: Container(
+                                  width: 26,
+                                  height: 26,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Colors.white,
+                                    border: Border.all(
+                                      color:
+                                      Colors
+                                          .grey[200]!, // Border color to blend with the background
+                                      width: 1,
                                     ),
+                                  ),
+                                  child: CachedNetworkImage(
+                                    imageUrl:
+                                    "https://firebasestorage.googleapis.com/v0/b/studyco-app-55a76.firebasestorage.app/o/util%2Fverified.png?alt=media&token=b1f56d5c-27b2-4044-b0a6-a43acb4d350b",
+                                    fit: BoxFit.contain,
+                                  ),
+                                ),
+                              ) : SizedBox.shrink(),
+                            ],
                           ),
 
                           SizedBox(width: 16),
@@ -185,21 +242,7 @@ class ProfileScreen extends StatelessWidget {
                                     },
                           ),
                         ),
-                        SizedBox(width: 12),
-                        Expanded(
-                          child: _buildActionButton(
-                            icon: Icons.shopping_cart,
-                            label: 'Cart',
-                            color: Colors.blueAccent,
-                            textColor: Colors.white,
-                            onTap:
-                                userProfileController.isLoading.value
-                                    ? () {}
-                                    : () {
-                                      Get.to(() => CartPage());
-                                    },
-                          ),
-                        ),
+
                         SizedBox(width: 12),
                         Expanded(
                           child: _buildActionButton(
@@ -222,41 +265,22 @@ class ProfileScreen extends StatelessWidget {
 
                     // Menu Items - skeleton-friendly
                     _buildMenuItem(
-                      icon: Icons.person_add,
+                      icon: Icons.edit_road_rounded,
                       title:
                           userProfileController.isLoading.value
                               ? 'Loading...'
-                              : 'Add Profile',
+                              : 'Edit Profile',
                       subtitle:
                           userProfileController.isLoading.value
                               ? 'Loading description...'
-                              : 'Allow you to add multiple profiles',
+                              : 'Edit your profile (class , course, etc.)',
                       onTap:
                           userProfileController.isLoading.value
                               ? () {}
                               : () {
-                                print('Add Profile tapped');
+                                Get.to(() => ProfileFillScreen());
                               },
                     ),
-
-                    _buildMenuItem(
-                      icon: Icons.swap_horiz,
-                      title:
-                          userProfileController.isLoading.value
-                              ? 'Loading...'
-                              : 'Switch Profile',
-                      subtitle:
-                          userProfileController.isLoading.value
-                              ? 'Loading description...'
-                              : 'Switch to your another profile',
-                      onTap:
-                          userProfileController.isLoading.value
-                              ? () {}
-                              : () {
-                                print('Switch Profile tapped');
-                              },
-                    ),
-
                     _buildMenuItem(
                       icon: Icons.feedback,
                       title:

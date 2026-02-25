@@ -16,6 +16,7 @@ class UserProfileController extends GetxController {
   var name = ''.obs;
   var number = ''.obs;
   var profile = ''.obs;
+  RxBool isVerified = false.obs;
   var joinedDate = ''.obs;
   var education = {}.obs;
 
@@ -60,6 +61,7 @@ class UserProfileController extends GetxController {
         number.value = data['number'] ?? '';
         profile.value = data['profile'] ?? '';
         education.value = data['education'] ?? {};
+        isVerified.value = data['isVerified'] ?? false;
 
         // Format joined date if available
         if (data['joined'] != null) {
@@ -456,6 +458,7 @@ class UserProfileController extends GetxController {
     profile.value = '';
     joinedDate.value = '';
     errorMessage.value = '';
+    isVerified.value = false;
   }
 
   /// Listen to real-time profile updates
@@ -485,6 +488,7 @@ class UserProfileController extends GetxController {
         name.value = data['name'] ?? '';
         number.value = data['number'] ?? '';
         profile.value = data['profile'] ?? '';
+        isVerified.value = data['isVerified'] ?? false;
 
         if (data['joined'] != null) {
           try {

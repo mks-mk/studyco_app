@@ -8,6 +8,7 @@ class ForYouController extends GetxController {
   final RxBool isLoading = false.obs;
   final RxString errorMessage = ''.obs;
   GetStorage storage = GetStorage();
+  final RxString searchQuery = ''.obs;
 
   @override
   void onInit() {
@@ -100,6 +101,15 @@ class ForYouController extends GetxController {
     } catch (e) {
       return null;
     }
+  }
+
+  List<ForYouModel> get filteredItems {
+    if (searchQuery.value.trim().isEmpty) return forYouItems;
+    return forYouItems
+        .where((item) => item.name
+        .toLowerCase()
+        .contains(searchQuery.value.trim().toLowerCase()))
+        .toList();
   }
 
   // Search items
