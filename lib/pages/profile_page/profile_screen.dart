@@ -5,7 +5,6 @@ import 'package:liquid_pull_to_refresh/liquid_pull_to_refresh.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:studyco_app/Utilities/functions/cantact.dart';
 import 'package:studyco_app/bindings/bookmark_binding.dart';
-import 'package:studyco_app/pages/carts/cart_page.dart';
 import 'package:studyco_app/pages/materials/my_bookmarks_page.dart';
 import 'package:studyco_app/pages/settings/settings_page.dart';
 
@@ -90,7 +89,7 @@ class ProfileScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.grey.withOpacity(0.1),
+                            color: Colors.grey.withValues(alpha: 0.1),
                             blurRadius: 10,
                             offset: Offset(0, 5),
                           ),
@@ -100,20 +99,24 @@ class ProfileScreen extends StatelessWidget {
                         children: [
                           // Profile Avatar - skeleton-friendly
                           // Wrap your original widget in a Stack to place the camera icon on top
-                          Stack(
-                            children: [
-                              // Your original container for the profile image
-                              Container(
-                                width: 60,
-                                height: 60,
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[200],
-                                  shape:
-                                      BoxShape
-                                          .circle, // Using BoxShape.circle is cleaner
-                                ),
-                                // Use ClipOval for perfect circular clipping of the child
-                                child: ClipOval(
+                          GestureDetector(
+                            onTap: userProfileController.isLoading.value || userProfileController.isUploadingImage.value
+                                ? null
+                                : () => userProfileController.updateProfileImage(),
+                            child: Stack(
+                              children: [
+                                // Your original container for the profile image
+                                Container(
+                                  width: 60,
+                                  height: 60,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[200],
+                                    shape:
+                                        BoxShape
+                                            .circle, // Using BoxShape.circle is cleaner
+                                  ),
+                                  // Use ClipOval for perfect circular clipping of the child
+                                  child: ClipOval(
                                   // AnimatedSwitcher fades between the loading indicator and the image
                                   child: AnimatedSwitcher(
                                     duration: const Duration(milliseconds: 400),
@@ -123,7 +126,7 @@ class ProfileScreen extends StatelessWidget {
                                           child: child,
                                         ),
                                     child:
-                                        userProfileController.isLoading.value
+                                        (userProfileController.isLoading.value || userProfileController.isUploadingImage.value)
                                             // 1. Show a progress indicator while loading
                                             ? Container(
                                               // Use a key to help AnimatedSwitcher identify the change
@@ -182,10 +185,29 @@ class ProfileScreen extends StatelessWidget {
                                   ),
                                 ),
                               ) : SizedBox.shrink(),
+                              // 4. Edit Camera Icon Overlay
+                              Positioned(
+                                bottom: 0,
+                                left: -5,
+                                child: Container(
+                                  width: 26,
+                                  height: 26,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Color(0xFFFFBB00),
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: Icon(Icons.camera_alt, size: 14, color: Colors.white),
+                                ),
+                              ),
                             ],
                           ),
+                        ),
 
-                          SizedBox(width: 16),
+                        SizedBox(width: 16),
 
                           // Profile Info - skeleton-friendly
                           Expanded(
@@ -362,7 +384,7 @@ class ProfileScreen extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
+              color: Colors.grey.withValues(alpha: 0.1),
               blurRadius: 5,
               offset: Offset(0, 2),
             ),
@@ -405,7 +427,7 @@ class ProfileScreen extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
+                color: Colors.grey.withValues(alpha: 0.1),
                 blurRadius: 5,
                 offset: Offset(0, 2),
               ),

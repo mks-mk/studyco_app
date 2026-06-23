@@ -12,7 +12,6 @@ import '../Utilities/functions/deviceid.dart';
 import '../pages/home/home_screen.dart';
 import 'ban_account_controller.dart';
 import 'bookmark/bookmarkController.dart';
-import 'cart/cart_controller.dart';
 import 'downloads/save_controller.dart';
 import 'myMaterials/my_materials_controller.dart';
 

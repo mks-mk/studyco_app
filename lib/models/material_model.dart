@@ -82,7 +82,7 @@ class MaterialModel {
       'source': source,
       'price': price,
       'type': type,
-      'color': color.value,
+      'color': color.toARGB32(),
     };
   }
 

@@ -1,13 +1,17 @@
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 
 class UserProfileController extends GetxController {
   // Observable variables
   var profileData = <String, dynamic>{}.obs;
   var isLoading = false.obs;
+  var isUploadingImage = false.obs;
   var errorMessage = ''.obs;
 
   // Individual profile fields for easy access
@@ -424,6 +428,61 @@ class UserProfileController extends GetxController {
     } catch (e) {
       errorMessage.value = 'Failed to update profile: ${e.toString()}';
       print('Error updating profile field: $e');
+    }
+  }
+
+  /// Update Profile Image
+  Future<void> updateProfileImage() async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 70,
+      );
+
+      if (image == null) return;
+
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
+        errorMessage.value = 'User not authenticated';
+        return;
+      }
+
+      isUploadingImage.value = true;
+      File file = File(image.path);
+
+      // Create a reference to Firebase Storage
+      final storageRef = FirebaseStorage.instance
+          .ref()
+          .child('users/profile_pictures/${currentUser.uid}.jpg');
+
+      // Upload the file
+      await storageRef.putFile(file);
+
+      // Get download URL
+      final downloadUrl = await storageRef.getDownloadURL();
+
+      // Update Firestore
+      await updateProfileField('profile', downloadUrl);
+
+      Get.snackbar(
+        'Success',
+        'Profile picture updated successfully',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+      );
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Failed to upload image: $e',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      print('Error uploading image: $e');
+    } finally {
+      isUploadingImage.value = false;
     }
   }
 

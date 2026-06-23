@@ -300,7 +300,7 @@ class BookmarkController extends GetxController {
 
     } catch (e) {
       print('Error updating Firestore bookmarks: $e');
-      throw e;
+      rethrow;
     }
   }
 

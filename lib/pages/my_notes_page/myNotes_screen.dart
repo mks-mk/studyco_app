@@ -228,7 +228,7 @@ class _MyNotesScreenState extends State<MyNotesScreen> {
                       setState(() => showBookmarkedOnly = newValue);
                       setSheetState(() {});
                     },
-                    activeColor: const Color(0xFFFFBB00),
+                    activeThumbColor: const Color(0xFFFFBB00),
                     secondary: const Icon(Icons.bookmark_border_rounded),
                   ),
                 ],
@@ -354,7 +354,7 @@ class _MyNotesScreenState extends State<MyNotesScreen> {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withOpacity(0.2),
+                  color: Colors.grey.withValues(alpha: 0.2),
                   blurRadius: 8,
                   offset: const Offset(0, 3),
                 ),
@@ -527,7 +527,7 @@ class _MyNotesScreenState extends State<MyNotesScreen> {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
+                color: Colors.grey.withValues(alpha: 0.1),
                 blurRadius: 8,
                 offset: const Offset(0, 3),
               ),
@@ -665,7 +665,7 @@ class _MyNotesScreenState extends State<MyNotesScreen> {
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: isBookmarked ? const Color(0xFFFFBB00).withOpacity(0.1) : Colors.grey[100],
+                                color: isBookmarked ? const Color(0xFFFFBB00).withValues(alpha: 0.1) : Colors.grey[100],
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Icon(

@@ -1,10 +1,7 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
-import '../Utilities/components/gradient_bt.dart';
 import '../Utilities/components/single_login_alert.dart';
 import '../Utilities/functions/cantact.dart';
 import '../Utilities/functions/deviceid.dart';

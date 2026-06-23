@@ -29,6 +29,7 @@ class HomeScreen extends StatelessWidget {
     final ForYouController forYouController = Get.put(ForYouController());
     final ScrollerController scrollControl = Get.find<ScrollerController>();
     final NavbarController navbarController = Get.put(NavbarController());
+    final RecentMaterialsController recentMaterialsController = Get.put(RecentMaterialsController());
 
     SystemChrome.setSystemUIOverlayStyle(
       SystemUiOverlayStyle(

@@ -7,10 +7,10 @@ import '../../Utilities/variables/app_colors.dart';
 import '../../controllers/bookmark/bookmarkController.dart';
 import '../../controllers/recentOpenings/recent_openings_controller.dart';
 import '../../controllers/subjectController/getMaterialsWithSubjects.dart';
-import '../../controllers/cart/cart_controller.dart';
 import '../../controllers/myMaterials/my_materials_controller.dart';
 import '../../models/material_model.dart';
-import '../carts/material_details_page.dart';
+import '../../controllers/cart/cart_controller.dart';
+import '../carts/cart_page.dart';
 import '../pdf_viewer/pdf_view_page.dart';
 
 class MyBookmarks extends StatefulWidget {
@@ -37,6 +37,9 @@ class _MyBookmarksState extends State<MyBookmarks> {
   // Controllers
   late TextEditingController searchController;
   late FocusNode searchFocusNode;
+
+  final GlobalKey<LiquidPullToRefreshState> refreshIndicatorKey =
+      GlobalKey<LiquidPullToRefreshState>();
   late BookmarkController bookmarkController;
   late MaterialsWithSubjectsController materialsController;
   late RecentMaterialsController recentController; // ADD THIS
@@ -166,8 +169,6 @@ class _MyBookmarksState extends State<MyBookmarks> {
 
   @override
   Widget build(BuildContext context) {
-    final GlobalKey<LiquidPullToRefreshState> refreshIndicatorKey =
-    GlobalKey<LiquidPullToRefreshState>();
 
     return Container(
       decoration: BoxDecoration(
@@ -271,7 +272,7 @@ class _MyBookmarksState extends State<MyBookmarks> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: Offset(0, 5),
           ),
@@ -404,7 +405,7 @@ class _MyBookmarksState extends State<MyBookmarks> {
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: Offset(0, 3),
           ),
@@ -524,6 +525,7 @@ class _MyBookmarksState extends State<MyBookmarks> {
   Widget _buildGridView() {
     final filteredMaterials = _getFilteredMaterials();
     final myMaterialsController = Get.find<MyMaterialsController>();
+    final cartController = Get.put(CartController());
 
     return GridView.builder(
       physics: AlwaysScrollableScrollPhysics(),
@@ -543,9 +545,13 @@ class _MyBookmarksState extends State<MyBookmarks> {
           return GestureDetector(
             onTap: () {
               if (material.price > 0 && !isPurchased) {
-                Get.to(
-                      () => MaterialDetailsPage(material: material,subject: widget.subject,),
-                  transition: Transition.fadeIn,
+                cartController.addToCart(
+                  materialId: material.id,
+                  title: material.noteName,
+                  subject: widget.subject,
+                  price: material.price.toDouble(),
+                  thumbnail: material.thumbnail,
+                  type: material.type,
                 );
               } else {
                 // ADDED: For free materials OR purchased materials, add to recent and open PDF
@@ -572,7 +578,7 @@ class _MyBookmarksState extends State<MyBookmarks> {
               decoration: BoxDecoration(
                 color: material.color,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: material.color.withOpacity(0.3)),
+                border: Border.all(color: material.color.withValues(alpha: 0.3)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -755,6 +761,7 @@ class _MyBookmarksState extends State<MyBookmarks> {
   Widget _buildListView() {
     final filteredMaterials = _getFilteredMaterials();
     final myMaterialsController = Get.find<MyMaterialsController>();
+    final cartController = Get.put(CartController());
 
     return ListView.builder(
       physics: AlwaysScrollableScrollPhysics(),
@@ -772,7 +779,7 @@ class _MyBookmarksState extends State<MyBookmarks> {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
+                  color: Colors.grey.withValues(alpha: 0.1),
                   blurRadius: 8,
                   offset: Offset(0, 3),
                 ),
@@ -781,9 +788,13 @@ class _MyBookmarksState extends State<MyBookmarks> {
             child: GestureDetector(
               onTap: () {
                 if (material.price > 0 && !isPurchased) {
-                  Get.to(
-                        () => MaterialDetailsPage(material: material,subject: widget.subject,),
-                    transition: Transition.fadeIn,
+                  cartController.addToCart(
+                    materialId: material.id,
+                    title: material.noteName,
+                    subject: widget.subject,
+                    price: material.price.toDouble(),
+                    thumbnail: material.thumbnail,
+                    type: material.type,
                   );
                 } else {
                   // ADDED: For free materials OR purchased materials, add to recent and open PDF

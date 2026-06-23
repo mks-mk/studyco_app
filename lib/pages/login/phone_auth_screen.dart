@@ -5,7 +5,6 @@ import 'package:intl_phone_number_input/intl_phone_number_input.dart';
 import 'package:studyco_app/Utilities/components/gradient_bt.dart';
 
 import '../../Utilities/functions/firebase/phone_sign_in.dart';
-import 'otp_screen.dart';
 
 class PhoneNumberAuthScreen extends StatefulWidget {
   const PhoneNumberAuthScreen({super.key});

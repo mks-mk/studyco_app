@@ -63,7 +63,7 @@ class DropdownSearchInput<T> extends StatelessWidget {
                 return items ?? [];
               },
               selectedItem: selectedItem,
-              onChanged: onChanged,
+              onSelected: onChanged,
               itemAsString: itemAsString,
               decoratorProps: DropDownDecoratorProps(
                 textAlign: TextAlign.center,
@@ -102,10 +102,6 @@ class DropdownSearchInput<T> extends StatelessWidget {
                 ),
                 menuProps: MenuProps(
                   backgroundColor: Colors.white,
-
-                  popUpAnimationStyle: AnimationStyle(
-                    curve: Curves.easeIn,
-                  ),
                   elevation: 4,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),

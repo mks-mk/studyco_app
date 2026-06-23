@@ -9,10 +9,10 @@ import '../../Utilities/variables/app_colors.dart';
 import '../../bindings/bookmark_binding.dart';
 import '../../controllers/downloads/save_controller.dart';
 import '../../controllers/subjectController/getMaterialsWithSubjects.dart';
-import '../../controllers/cart/cart_controller.dart';
 import '../../controllers/myMaterials/my_materials_controller.dart';
 import '../../models/material_model.dart';
-import '../carts/material_details_page.dart';
+import '../../controllers/cart/cart_controller.dart';
+import '../carts/cart_page.dart';
 import '../downlod/downloads_page.dart';
 import '../pdf_viewer/pdf_view_page.dart';
 import 'my_bookmarks_page.dart';
@@ -44,6 +44,9 @@ class _MaterialsPageState extends State<MaterialsPage> {
   late TextEditingController searchController;
   late FocusNode searchFocusNode;
   late MaterialsWithSubjectsController materialsController;
+
+  final GlobalKey<LiquidPullToRefreshState> refreshIndicatorKey =
+      GlobalKey<LiquidPullToRefreshState>();
 
   @override
   void initState() {
@@ -79,8 +82,6 @@ class _MaterialsPageState extends State<MaterialsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final GlobalKey<LiquidPullToRefreshState> refreshIndicatorKey =
-    GlobalKey<LiquidPullToRefreshState>();
 
     return Container(
       decoration: BoxDecoration(
@@ -105,6 +106,17 @@ class _MaterialsPageState extends State<MaterialsPage> {
         child: Scaffold(
           backgroundColor: Colors.transparent,
           resizeToAvoidBottomInset: false,
+          floatingActionButton: Obx(() {
+            final cartCount = Get.put(CartController()).cartItemCount;
+            if (cartCount > 0) {
+              return FloatingActionButton(
+                onPressed: () => Get.to(() => CartPage()),
+                backgroundColor: Color(0xFFFFBB00),
+                child: Icon(Icons.shopping_cart, color: Colors.white),
+              );
+            }
+            return SizedBox.shrink();
+          }),
           body: SafeArea(
             child: Obx(
                   () => Padding(
@@ -473,6 +485,7 @@ class _MaterialsPageState extends State<MaterialsPage> {
   Widget _buildGridView() {
     final downloadManager = Get.find<SecureDownloadManager>();
     final myMaterialsController = Get.find<MyMaterialsController>();
+    final cartController = Get.put(CartController());
 
     return GridView.builder(
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.manual,
@@ -496,9 +509,13 @@ class _MaterialsPageState extends State<MaterialsPage> {
           return GestureDetector(
             onTap: () {
               if (material.price > 0 && !isPurchased) {
-                Get.to(
-                      () => MaterialDetailsPage(material: material,subject: widget.subject,),
-                  transition: Transition.fadeIn,
+                cartController.addToCart(
+                  materialId: material.id,
+                  title: material.noteName,
+                  subject: widget.subject,
+                  price: material.price.toDouble(),
+                  thumbnail: material.thumbnail,
+                  type: material.type,
                 );
               } else {
                 // For free materials OR purchased materials, open PDF
@@ -721,6 +738,7 @@ class _MaterialsPageState extends State<MaterialsPage> {
   Widget _buildListView() {
     final downloadManager = Get.find<SecureDownloadManager>();
     final myMaterialsController = Get.find<MyMaterialsController>(); // ADD THIS
+    final cartController = Get.put(CartController());
 
     return ListView.builder(
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.manual,
@@ -739,14 +757,14 @@ class _MaterialsPageState extends State<MaterialsPage> {
               // UPDATED: Handle different material states
               if (material.price > 0 && !isPurchased) {
                 // For unpurchased paid materials, add to cart
-                // cartController.addToCart(
-                //   materialId: material.id,
-                //   title: material.noteName,
-                //   subject: widget.subject,
-                //   price: material.price.toDouble(),
-                //   thumbnail: material.thumbnail,
-                //   type: material.type,
-                // );
+                cartController.addToCart(
+                  materialId: material.id,
+                  title: material.noteName,
+                  subject: widget.subject,
+                  price: material.price.toDouble(),
+                  thumbnail: material.thumbnail,
+                  type: material.type,
+                );
               } else {
                 // For free materials OR purchased materials, open PDF
                 if (material.type == "pdf" || material.type == "Pdf") {
@@ -762,10 +780,10 @@ class _MaterialsPageState extends State<MaterialsPage> {
             child: Container(
               margin: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
-                color: material.color.withOpacity(0.1),
+                color: material.color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: material.color.withOpacity(0.3),
+                  color: material.color.withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
@@ -787,7 +805,7 @@ class _MaterialsPageState extends State<MaterialsPage> {
                           imageUrl: material.thumbnail,
                           fit: BoxFit.fill,
                           placeholder: (context, url) => Container(
-                            color: material.color.withOpacity(0.3),
+                            color: material.color.withValues(alpha: 0.3),
                             child: Icon(
                               Icons.image,
                               color: Colors.white,
@@ -795,7 +813,7 @@ class _MaterialsPageState extends State<MaterialsPage> {
                             ),
                           ),
                           errorWidget: (context, url, error) => Container(
-                            color: material.color.withOpacity(0.3),
+                            color: material.color.withValues(alpha: 0.3),
                             child: Icon(
                               Icons.error,
                               color: Colors.white,
@@ -833,7 +851,7 @@ class _MaterialsPageState extends State<MaterialsPage> {
                               Container(
                                 padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: material.color.withOpacity(0.2),
+                                  color: material.color.withValues(alpha: 0.2),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(
@@ -945,10 +963,10 @@ class _MaterialsPageState extends State<MaterialsPage> {
                                           padding: EdgeInsets.all(8),
                                           margin: EdgeInsets.only(right: 8),
                                           decoration: BoxDecoration(
-                                            color: material.color.withOpacity(0.1),
+                                            color: material.color.withValues(alpha: 0.1),
                                             borderRadius: BorderRadius.circular(8),
                                             border: Border.all(
-                                              color: material.color.withOpacity(0.3),
+                                              color: material.color.withValues(alpha: 0.3),
                                             ),
                                           ),
                                           child: activeDownload != null
@@ -981,10 +999,10 @@ class _MaterialsPageState extends State<MaterialsPage> {
                                     child: Container(
                                       padding: EdgeInsets.all(8),
                                       decoration: BoxDecoration(
-                                        color: material.color.withOpacity(0.1),
+                                        color: material.color.withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(8),
                                         border: Border.all(
-                                          color: material.color.withOpacity(0.3),
+                                          color: material.color.withValues(alpha: 0.3),
                                         ),
                                       ),
                                       child: Obx(() => Icon(

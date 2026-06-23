@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sms_autofill/sms_autofill.dart';
 import 'dart:async';
-import '../../Utilities/components/gradient_bt.dart';
 import '../../Utilities/functions/firebase/phone_sign_in.dart';
 
 class OTPScreen extends StatefulWidget {
@@ -357,7 +356,7 @@ class _OTPScreenState extends State<OTPScreen> with CodeAutoFill {
                         boxShadow: controllers[index].text.isNotEmpty
                             ? [
                           BoxShadow(
-                            color: Colors.blue.withOpacity(0.2),
+                            color: Colors.blue.withValues(alpha: 0.2),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
@@ -451,7 +450,7 @@ class _OTPScreenState extends State<OTPScreen> with CodeAutoFill {
                             borderRadius: BorderRadius.circular(8),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.blue.withOpacity(0.1),
+                                color: Colors.blue.withValues(alpha: 0.1),
                                 blurRadius: 8,
                                 offset: const Offset(0, 2),
                               ),
@@ -543,7 +542,7 @@ class _OTPScreenState extends State<OTPScreen> with CodeAutoFill {
                         boxShadow: otpCode.length == 6 && !isLoading
                             ? [
                           BoxShadow(
-                            color: Color(0xFFDDCFAF).withOpacity(0.4),
+                            color: Color(0xFFDDCFAF).withValues(alpha: 0.4),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
                           ),

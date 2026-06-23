@@ -201,8 +201,8 @@ class _PremiumPdfViewPageState extends State<PremiumPdfViewPage> {
   // ADD: Extract PDF viewer parameters to reuse
   PdfViewerParams _getPdfViewerParams() {
     return PdfViewerParams(
+      textSelectionParams: PdfTextSelectionParams(enabled: true),
       // Premium Features Configuration
-      enableTextSelection: true,
       maxScale: 8.0,
       minScale: 0.25,
       linkHandlerParams: PdfLinkHandlerParams(
@@ -343,7 +343,7 @@ class _PremiumPdfViewPageState extends State<PremiumPdfViewPage> {
             Container(
               padding: EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.red[900]?.withOpacity(0.3),
+                color: Colors.red[900]?.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
@@ -400,11 +400,11 @@ class _PremiumPdfViewPageState extends State<PremiumPdfViewPage> {
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 10, vertical: 16),
         decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.8),
+          color: Colors.black.withValues(alpha: 0.8),
           borderRadius: BorderRadius.circular(25),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               blurRadius: 10,
               offset: Offset(0, 5),
             ),
@@ -486,8 +486,8 @@ class _PremiumPdfViewPageState extends State<PremiumPdfViewPage> {
         decoration: BoxDecoration(
           color:
               onPressed != null
-                  ? Colors.white.withOpacity(0.1)
-                  : Colors.grey.withOpacity(0.1),
+                  ? Colors.white.withValues(alpha: 0.1)
+                  : Colors.grey.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Column(
@@ -511,7 +511,7 @@ class _PremiumPdfViewPageState extends State<PremiumPdfViewPage> {
       left: 0,
       right: 0,
       child: Container(
-        color: Colors.black.withOpacity(0.9),
+        color: Colors.black.withValues(alpha: 0.9),
         padding: EdgeInsets.all(16),
         child: Row(
           children: [

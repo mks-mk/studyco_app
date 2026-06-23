@@ -359,7 +359,7 @@ class SecureDownloadManager extends GetxController {
         encryptedBytes[i] = bytes[i] ^ key[i % key.length];
       }
 
-      final encryptedPath = '${originalPath}.encrypted';
+      final encryptedPath = '$originalPath.encrypted';
       final encryptedFile = File(encryptedPath);
       await encryptedFile.writeAsBytes(encryptedBytes);
 
@@ -392,7 +392,7 @@ class SecureDownloadManager extends GetxController {
       return tempPath;
     } catch (e) {
       print('Decryption error: $e');
-      throw e;
+      rethrow;
     }
   }
 

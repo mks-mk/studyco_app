@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:studyco_app/Utilities/variables/app_colors.dart';
-import '../Utilities/components/single_login_alert.dart';
 import '../Utilities/functions/cantact.dart';
 import '../Utilities/functions/firebase/google_sighnout.dart';
 import '../pages/splash/splashScreen.dart';
