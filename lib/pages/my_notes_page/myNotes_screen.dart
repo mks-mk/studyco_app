@@ -40,10 +40,10 @@ class _MyNotesScreenState extends State<MyNotesScreen> {
   void initState() {
     super.initState();
 
-    // Initialize controllers
-    myMaterialsController = Get.find<MyMaterialsController>();
-    materialsController = Get.find<MaterialsWithSubjectsController>();
-    bookmarkController = Get.find<BookmarkController>();
+    // Initialize controllers with Get.put to avoid "not found" errors on first login
+    myMaterialsController = Get.put(MyMaterialsController());
+    materialsController = Get.put(MaterialsWithSubjectsController());
+    bookmarkController = Get.put(BookmarkController());
     recentController = Get.put(RecentMaterialsController());
 
     // Fetch purchased materials

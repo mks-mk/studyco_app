@@ -8,6 +8,7 @@ import 'package:skeletonizer/skeletonizer.dart';
 import '../../Utilities/variables/app_colors.dart';
 import '../../bindings/bookmark_binding.dart';
 import '../../controllers/downloads/save_controller.dart';
+import '../../controllers/recentOpenings/recent_openings_controller.dart';
 import '../../controllers/subjectController/getMaterialsWithSubjects.dart';
 import '../../controllers/myMaterials/my_materials_controller.dart';
 import '../../models/material_model.dart';
@@ -318,7 +319,7 @@ class _MaterialsPageState extends State<MaterialsPage> {
         crossAxisCount: 2,
         crossAxisSpacing: 0,
         mainAxisSpacing: 0,
-        childAspectRatio: 0.66,
+        mainAxisExtent: 260,
       ),
       itemCount: 6, // Show 6 skeleton items
       itemBuilder: (context, index) {
@@ -332,13 +333,14 @@ class _MaterialsPageState extends State<MaterialsPage> {
             ),
             child: Column(
               children: [
-                SizedBox(height: 4),
-                Container(
-                  width: 150,
-                  height: 160,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(16),
+                Expanded(
+                  child: Container(
+                    width: double.infinity,
+                    margin: EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
                 ),
                 Padding(
@@ -486,6 +488,7 @@ class _MaterialsPageState extends State<MaterialsPage> {
     final downloadManager = Get.find<SecureDownloadManager>();
     final myMaterialsController = Get.find<MyMaterialsController>();
     final cartController = Get.put(CartController());
+    final recentController = Get.put(RecentMaterialsController());
 
     return GridView.builder(
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.manual,
@@ -495,7 +498,7 @@ class _MaterialsPageState extends State<MaterialsPage> {
         crossAxisCount: 2,
         crossAxisSpacing: 0,
         mainAxisSpacing: 0,
-        childAspectRatio: 0.66,
+        mainAxisExtent: 260,
       ),
       itemCount: _getFilteredMaterials().length,
       itemBuilder: (context, index) {
@@ -520,6 +523,15 @@ class _MaterialsPageState extends State<MaterialsPage> {
               } else {
                 // For free materials OR purchased materials, open PDF
                 if (material.type == "pdf" || material.type == "Pdf") {
+                  recentController.addRecentMaterial(
+                    materialId: material.id,
+                    title: material.noteName,
+                    subject: widget.subject,
+                    type: material.type,
+                    thumbnail: material.thumbnail,
+                    source: material.source,
+                    price: material.price.toDouble(),
+                  );
                   Get.to(
                         () => PremiumPdfViewPage(
                       url: material.source,
@@ -541,18 +553,19 @@ class _MaterialsPageState extends State<MaterialsPage> {
                 ),
                 child: Column(
                   children: [
-                    SizedBox(height: 4),
-                    Container(
-                      width: 150,
-                      height: 160,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: CachedNetworkImage(
-                          imageUrl: material.thumbnail,
-                          fit: BoxFit.fill,
+                    Expanded(
+                      child: Container(
+                        width: double.infinity,
+                        margin: EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: CachedNetworkImage(
+                            imageUrl: material.thumbnail,
+                            fit: BoxFit.fill,
+                          ),
                         ),
                       ),
                     ),
@@ -581,49 +594,52 @@ class _MaterialsPageState extends State<MaterialsPage> {
                           : MainAxisAlignment.end,
                       children: [
                         // UPDATED: Price container or purchased badge
-                        material.price != 0
-                            ? Container(
-                          decoration: BoxDecoration(
-                            color: isPurchased ? Colors.green : Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          margin: EdgeInsets.only(
-                            left: 8,
-                            right: 8,
-                            bottom: 8,
-                            top: 4,
-                          ),
-                          child: Center(
-                            child: Padding(
-                              padding: const EdgeInsets.all(4.0),
-                              child: isPurchased
-                                  ? Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.shopping_bag_rounded,
-                                    size: 16,
-                                    color: Colors.white,
-                                  ),
-                                ],
-                              )
-                                  : Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    " ₹${material.price} ",
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w500,
-                                      color: Colors.black,
+                        Flexible(
+                          child: material.price != 0
+                              ? Container(
+                            decoration: BoxDecoration(
+                              color: isPurchased ? Colors.green : Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            margin: EdgeInsets.only(
+                              left: 8,
+                              right: 8,
+                              bottom: 8,
+                              top: 4,
+                            ),
+                            child: Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(4.0),
+                                child: isPurchased
+                                    ? Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.shopping_bag_rounded,
+                                      size: 16,
+                                      color: Colors.white,
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                )
+                                    : Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      " ₹${material.price} ",
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.black,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
-                        )
-                            : SizedBox.shrink(),
+                          )
+                              : SizedBox.shrink(),
+                        ),
 
                         // Action buttons row
                         Row(
@@ -739,6 +755,7 @@ class _MaterialsPageState extends State<MaterialsPage> {
     final downloadManager = Get.find<SecureDownloadManager>();
     final myMaterialsController = Get.find<MyMaterialsController>(); // ADD THIS
     final cartController = Get.put(CartController());
+    final recentController = Get.put(RecentMaterialsController());
 
     return ListView.builder(
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.manual,
@@ -768,6 +785,15 @@ class _MaterialsPageState extends State<MaterialsPage> {
               } else {
                 // For free materials OR purchased materials, open PDF
                 if (material.type == "pdf" || material.type == "Pdf") {
+                  recentController.addRecentMaterial(
+                    materialId: material.id,
+                    title: material.noteName,
+                    subject: widget.subject,
+                    type: material.type,
+                    thumbnail: material.thumbnail,
+                    source: material.source,
+                    price: material.price.toDouble(),
+                  );
                   Get.to(
                         () => PremiumPdfViewPage(
                       url: material.source,

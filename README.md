@@ -11,6 +11,8 @@ Studyco is a modern, feature-rich educational platform built with Flutter. It pr
 
 ### 🔐 Authentication & Security
 - **Single Sign-On (SSO):** Seamless and secure Google Sign-In integration.
+- **Single Device Login:** Enforces one active session per user by validating unique hardware identifiers (`deviceId`).
+- **Account Moderation:** Real-time user restriction and banning system controlled via Firestore.
 - **Firebase Authentication:** Handles user sessions reliably.
 - **Secure Screenshot Prevention:** Protects premium study materials using the `no_screenshot` package.
 
@@ -94,13 +96,14 @@ This project heavily utilizes the **GetX** ecosystem for routing, dependency inj
 ---
 
 ## 📸 Screenshots
-*(Add screenshots of your app here to showcase the beautiful UI!)*
-
-<div style="display: flex; flex-direction: row; gap: 10px;">
-  <img src="assets/images/placeholder1.png" width="200"/>
-  <img src="assets/images/placeholder2.png" width="200"/>
-  <img src="assets/images/placeholder3.png" width="200"/>
-</div>
+<p align="center">
+  <img src="Screenshots/1.png" width="200"/>
+  <img src="Screenshots/2.png" width="200"/>
+  <img src="Screenshots/3.png" width="200"/>
+  <img src="Screenshots/4.png" width="200"/>
+  <img src="Screenshots/5.png" width="200"/>
+  <img src="Screenshots/6.png" width="200"/>
+</p>
 
 ---
 

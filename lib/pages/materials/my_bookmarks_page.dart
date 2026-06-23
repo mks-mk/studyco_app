@@ -533,7 +533,7 @@ class _MyBookmarksState extends State<MyBookmarks> {
         crossAxisCount: 2,
         crossAxisSpacing: 8,
         mainAxisSpacing: 8,
-        childAspectRatio: 0.65,
+        mainAxisExtent: 260,
       ),
       itemCount: filteredMaterials.length,
       itemBuilder: (context, index) {
@@ -683,8 +683,9 @@ class _MyBookmarksState extends State<MyBookmarks> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               if (material.price > 0)
-                                Container(
-                                  padding: EdgeInsets.symmetric(vertical: 2, horizontal: 6),
+                                Flexible(
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(vertical: 2, horizontal: 6),
                                   decoration: BoxDecoration(
                                     color: isPurchased ? Colors.green : Colors.white,
                                     borderRadius: BorderRadius.circular(12),
@@ -723,6 +724,7 @@ class _MyBookmarksState extends State<MyBookmarks> {
                                     ],
                                   ),
                                 ),
+                              ),
 
                               // ADDED: Recent indicator
                               Obx(() {
