@@ -54,7 +54,7 @@ Studyco is a modern, feature-rich educational platform built with Flutter. It pr
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/studyco_app.git
+   git clone https://github.com/MidhlajAm/studyco_app.git
    cd studyco_app
    ```
 
