@@ -14,17 +14,14 @@ import '../controllers/subjectController/getMaterialsWithSubjects.dart';
 class HomeBinding extends Bindings {
   @override
   void dependencies() {
-    // UI layout controllers
     Get.lazyPut(() => NavbarController());
 
-    // Core data controllers for the home screen
     Get.lazyPut(() => SessionController());
     Get.lazyPut(() => UserProfileController());
     Get.lazyPut(() => SubjectController());
     Get.lazyPut(() => ForYouController());
     Get.lazyPut(() => RecentMaterialsController());
 
-    // Auxiliary data controllers
     Get.lazyPut(() => BookmarkController());
     Get.lazyPut(() => MyMaterialsController());
     Get.lazyPut(() => MaterialsWithSubjectsController(), fenix: true);

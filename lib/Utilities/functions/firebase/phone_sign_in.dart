@@ -29,7 +29,6 @@ Future<void> verifyPhoneNumber(String phoneNumber) async {
       },
       codeSent: (String verificationId, int? resendToken) {
         Get.back();
-        // Navigate to OTP screen with verificationId
         Get.to(()=> OTPScreen(phoneNumber: phoneNumber,verificationId: verificationId,));
       },
       codeAutoRetrievalTimeout: (String verificationId) {},
@@ -69,7 +68,6 @@ Future<void> verifyOTP({
   }
 }
 
-// Common handler for phone sign-in
 Future<void> _handlePhoneSignIn(PhoneAuthCredential credential) async {
   try {
     final UserCredential userCredential = await FirebaseAuth.instance

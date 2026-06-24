@@ -102,7 +102,6 @@ class MyApp extends StatelessWidget {
   }
 }
 
-// Save/update token in Firestore (as before)
 Future<void> saveFcmTokenToFirestore(String? fcmToken) async {
   if (fcmToken == null) return;
   final user = Get.find<AuthController>().user;
@@ -119,7 +118,6 @@ Future<void> saveFcmTokenToFirestore(String? fcmToken) async {
   }
 }
 
-// Show "awesome notification" for a Firebase message
 void _showAwesomeNotification(RemoteMessage message) {
   final data = message.data;
   final notification = message.notification;

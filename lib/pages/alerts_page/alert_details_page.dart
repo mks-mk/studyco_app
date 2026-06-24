@@ -41,7 +41,6 @@ class AlertDetailsScreen extends StatelessWidget {
                             alert.imageUrl!,
                             width: double.infinity,
                             fit: BoxFit.cover,
-                            // Show a placeholder while loading
                             loadingBuilder: (context, child, loadingProgress) {
                               if (loadingProgress == null) return child;
                               return const AspectRatio(

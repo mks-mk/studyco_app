@@ -208,7 +208,6 @@ class _CartPageState extends State<CartPage> {
       print('Response data: ${e.response?.data}');
       print('Status code: ${e.response?.statusCode}');
 
-      // Handle specific error cases
       if (e.response?.statusCode == 401) {
         print('Authentication failed. Please check your Razorpay credentials.');
       } else if (e.response?.statusCode == 400) {

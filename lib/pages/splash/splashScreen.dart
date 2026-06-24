@@ -48,7 +48,6 @@ class _SplashscreenState extends State<Splashscreen>
     );
     super.initState();
 
-    // Initialize animation controllers with optimized durations
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 700),

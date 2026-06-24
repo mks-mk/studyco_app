@@ -5,7 +5,6 @@ import '../controllers/subjectController/getMaterialsWithSubjects.dart';
 class MyBookmarksBinding extends Bindings {
   @override
   void dependencies() {
-    // Put controllers if they don't exist
     if (!Get.isRegistered<BookmarkController>()) {
       Get.put(BookmarkController());
     }

@@ -84,7 +84,6 @@ class SubjectController extends GetxController {
         subjects.clear();
 
         if (subjectsData is List) {
-          // Handle array format
           print('Processing subjects as List with ${subjectsData.length} items');
           for (int i = 0; i < subjectsData.length; i++) {
             final subjectData = subjectsData[i];
@@ -101,7 +100,6 @@ class SubjectController extends GetxController {
             }
           }
         } else if (subjectsData is Map<String, dynamic>) {
-          // Handle object format with numbered keys
           print('Processing subjects as Map with ${subjectsData.length} items');
           subjectsData.forEach((key, value) {
             if (value is Map<String, dynamic>) {

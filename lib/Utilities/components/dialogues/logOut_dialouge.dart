@@ -25,7 +25,6 @@ void showLogoutDialog(BuildContext context) {
           ),
         ),
         actions: [
-          // Cancel button
           CupertinoDialogAction(
             child: Text(
               'Cancel',
@@ -38,7 +37,6 @@ void showLogoutDialog(BuildContext context) {
               Navigator.of(dialogContext).pop(); // Use dialogContext
             },
           ),
-          // Logout button
           CupertinoDialogAction(
             isDestructiveAction: true,
             child: Text(

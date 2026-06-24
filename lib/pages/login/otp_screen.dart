@@ -64,7 +64,6 @@ class _OTPScreenState extends State<OTPScreen> with CodeAutoFill {
       await SmsAutoFill().listenForCode();
       print('Started listening for SMS');
 
-      // Show user that we're listening
       Get.snackbar(
         'Auto-Fill Ready',
         'Waiting for SMS to auto-fill OTP...',
@@ -87,7 +86,6 @@ class _OTPScreenState extends State<OTPScreen> with CodeAutoFill {
       print('Auto-filled code: $code');
       _fillOTPFields(code!);
 
-      // Show success message
       Get.snackbar(
         'Auto-Fill Success',
         'OTP auto-filled successfully!',

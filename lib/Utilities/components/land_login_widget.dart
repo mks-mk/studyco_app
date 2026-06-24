@@ -67,9 +67,7 @@ class LandLoginWidget extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 10),
-            // Reactive Google Sign-In Button
             Obx(() {
-              // Handle navigation when login state changes
               if (authController.login.value == 1) {
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   Get.back();
@@ -124,7 +122,6 @@ class LandLoginWidget extends StatelessWidget {
               );
             }),
             const SizedBox(height: 12),
-            // Phone Sign-In Button (non-reactive)
             GradientBG(
               onTap: () {
                 Get.to(() => const PhoneNumberAuthScreen());

@@ -66,7 +66,6 @@ class MaterialsWithSubjectsController extends GetxController {
       errorMessage.value = e.toString();
       print('Error fetching materials: $e');
 
-      // Show error to user
       Get.snackbar(
         'Error',
         'Failed to load materials: ${e.toString()}',

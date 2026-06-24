@@ -14,12 +14,10 @@ import 'google_sighnout.dart';
 
 Future<void> googleAuthStudyCo() async {
   try {
-    // Step 1: Initialize Google Sign-In
     final GoogleSignIn googleSignIn = GoogleSignIn(
       scopes: ['email', 'profile'],
     );
 
-    // Step 2: Trigger Google Sign-In flow
     final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
     if (googleUser == null) {
       if (kDebugMode) {
@@ -28,21 +26,17 @@ Future<void> googleAuthStudyCo() async {
       return;
     }
 
-    // Step 3: Get authentication tokens
     final GoogleSignInAuthentication googleAuth =
         await googleUser.authentication;
 
-    // Step 4: Create Firebase credential
     final AuthCredential credential = GoogleAuthProvider.credential(
       accessToken: googleAuth.accessToken,
       idToken: googleAuth.idToken,
     );
 
-    // Step 5: Sign in to Firebase
     final UserCredential userCredential = await FirebaseAuth.instance
         .signInWithCredential(credential);
 
-    // Step 6: Get and handle user data safely
     final User? user = userCredential.user;
     if (user != null) {
       showProgress();
@@ -55,13 +49,12 @@ Future<void> googleAuthStudyCo() async {
           print('New user signed up with Google');
         }
 
-        // Handle first-time signup (with fallbacks for null values)
         await addUser(
-          name: user.displayName ?? 'No Name', // Fallback if null
-          email: user.email ?? 'no-email@studyco.com', // Fallback if null
-          number: user.phoneNumber ?? '', // Fallback if null
-          profile: user.photoURL ?? '', // Fallback if null
-          uid: user.uid, // UID is guaranteed to exist
+          name: user.displayName ?? 'No Name',
+          email: user.email ?? 'no-email@studyco.com',
+          number: user.phoneNumber ?? '',
+          profile: user.photoURL ?? '',
+          uid: user.uid,
           isNew: true,
         );
         devicePunch(isNew: true);
@@ -71,7 +64,6 @@ Future<void> googleAuthStudyCo() async {
         if (kDebugMode) {
           print('Existing user logged in with Google');
         }
-        // Handle existing user login
         devicePunch(isNew: false);
         if (await deviceCheck(userId: user.uid) == false) {
           Get.back();
@@ -83,11 +75,11 @@ Future<void> googleAuthStudyCo() async {
             cancelText: "Cancel",
             onAgree: () async {
               await addUser(
-                name: user.displayName ?? 'No Name', // Fallback if null
-                email: user.email ?? 'no-email@example.com', // Fallback if null
-                number: user.phoneNumber ?? '', // Fallback if null
-                profile: user.photoURL ?? '', // Fallback if null
-                uid: user.uid, // UID is guaranteed to exist
+                name: user.displayName ?? 'No Name',
+                email: user.email ?? 'no-email@example.com',
+                number: user.phoneNumber ?? '',
+                profile: user.photoURL ?? '',
+                uid: user.uid,
                 isNew: false,
               );
               authController.login.value = 1;
@@ -102,18 +94,17 @@ Future<void> googleAuthStudyCo() async {
           banCtrl.showBanD();
         } else {
           await addUser(
-            name: user.displayName ?? 'No Name', // Fallback if null
-            email: user.email ?? 'no-email@example.com', // Fallback if null
-            number: user.phoneNumber ?? '', // Fallback if null
-            profile: user.photoURL ?? '', // Fallback if null
-            uid: user.uid, // UID is guaranteed to exist
+            name: user.displayName ?? 'No Name',
+            email: user.email ?? 'no-email@example.com',
+            number: user.phoneNumber ?? '',
+            profile: user.photoURL ?? '',
+            uid: user.uid,
             isNew: false,
           );
           authController.login.value = 1;
         }
       }
 
-      // Log user details safely
       if (kDebugMode) {
         print('''
       Successful Google Sign-In:

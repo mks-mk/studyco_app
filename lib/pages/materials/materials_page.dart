@@ -54,14 +54,11 @@ class _MaterialsPageState extends State<MaterialsPage> {
     super.initState();
     secureScreen();
 
-    // Initialize controllers
     searchController = TextEditingController();
     searchFocusNode = FocusNode();
 
-    // Initialize materials controller with proper singleton pattern
     materialsController = Get.put(MaterialsWithSubjectsController(), tag: widget.subject);
 
-    // Initialize download and cart managers
     Get.put(SecureDownloadManager());
     Get.find<MyMaterialsController>();
 
@@ -654,7 +651,6 @@ class _MaterialsPageState extends State<MaterialsPage> {
                                 return GestureDetector(
                                   onTap: () async {
                                     if (isDownloaded) {
-                                      // Navigate to offline materials
                                       Get.to(() => OfflineMaterialsPage());
                                     } else if (activeDownload == null) {
                                       // Start download
@@ -766,12 +762,10 @@ class _MaterialsPageState extends State<MaterialsPage> {
         final material = filteredMaterials[index];
 
         return Obx(() {
-          // ADDED: Check if material is purchased
           final isPurchased = myMaterialsController.isMaterialPurchased(widget.subject, material.id);
 
           return GestureDetector(
             onTap: () {
-              // UPDATED: Handle different material states
               if (material.price > 0 && !isPurchased) {
                 // For unpurchased paid materials, add to cart
                 cartController.addToCart(
@@ -961,7 +955,6 @@ class _MaterialsPageState extends State<MaterialsPage> {
                               // Action buttons
                               Row(
                                 children: [
-                                  // UPDATED: Download button (for free materials OR purchased materials, not links)
                                   if ((material.price == 0 || isPurchased) && material.type.toLowerCase() != 'link')
                                     Obx(() {
                                       final isDownloaded = downloadManager.isMaterialDownloaded(material.id);
@@ -971,7 +964,6 @@ class _MaterialsPageState extends State<MaterialsPage> {
                                       return GestureDetector(
                                         onTap: () async {
                                           if (isDownloaded) {
-                                            // Navigate to offline materials
                                             Get.to(() => OfflineMaterialsPage());
                                           } else if (activeDownload == null) {
                                             // Start download
@@ -1226,7 +1218,6 @@ class _MaterialsPageState extends State<MaterialsPage> {
         selectedPriceFilter.isNotEmpty;
   }
 
-  // Show Filter Bottom Sheet
   void _showFilterBottomSheet() {
     Set<String> availableTypes = materialsController.materials.map((m) => m.type).toSet();
 
@@ -1247,7 +1238,6 @@ class _MaterialsPageState extends State<MaterialsPage> {
           ),
           child: Column(
             children: [
-              // Handle bar
               Container(
                 margin: EdgeInsets.only(top: 8),
                 width: 40,

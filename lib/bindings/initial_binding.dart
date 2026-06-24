@@ -6,7 +6,6 @@ import '../controllers/scrollController.dart';
 class InitialBinding extends Bindings {
   @override
   void dependencies() {
-    // These must be ready immediately
     Get.put(AuthController(), permanent: true);
     Get.put(BanController(), permanent: true);
     Get.put(ScrollerController(), permanent: true);

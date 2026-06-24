@@ -379,7 +379,6 @@ class OfflineMaterialsPage extends StatelessWidget {
           isOfflineFile: true,
         ));
       } else {
-        // Handle other file types (video, audio, etc.)
         Get.snackbar(
           'Info',
           'Opening ${material.materialType} files will be available soon',

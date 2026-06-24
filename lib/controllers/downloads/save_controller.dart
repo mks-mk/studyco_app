@@ -133,7 +133,6 @@ class SecureDownloadManager extends GetxController {
       final fileName = _generateSecureFileName(materialId, title, materialType);
       final filePath = '${secureDir.path}/$fileName';
 
-      // Initialize download progress
       final downloadProgress = DownloadProgress(
         materialId: materialId,
         title: title,

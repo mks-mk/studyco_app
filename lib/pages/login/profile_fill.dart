@@ -88,7 +88,6 @@ class _ProfileFillScreenState extends State<ProfileFillScreen> {
             selectedCourseData['Groups'] != null) {
           groups = List<String>.from(selectedCourseData['Groups']);
 
-          // Show groups dropdown with animation
           Future.delayed(const Duration(milliseconds: 100), () {
             if (mounted) {
               setState(() {
@@ -97,7 +96,6 @@ class _ProfileFillScreenState extends State<ProfileFillScreen> {
             }
           });
 
-          // Show semester dropdown only for BTech
           if (courseName == "BTech") {
             semesters = [
               '1st Semester',

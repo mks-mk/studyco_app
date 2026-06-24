@@ -174,7 +174,6 @@ class _PremiumPdfViewPageState extends State<PremiumPdfViewPage> {
   // ADD: Method to build appropriate PDF viewer
   Widget _buildPdfViewer() {
     if (widget.isOfflineFile) {
-      // Handle offline file loading
       if (_isLoadingOfflineFile) {
         return _buildOfflineLoadingIndicator();
       } else if (_documentBytes != null) {

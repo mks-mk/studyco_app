@@ -46,14 +46,12 @@ class MyNotesController extends GetxController {
           myNotes.clear();
 
           if (subjectsData is List) {
-            // Handle array format
             for (var subjectData in subjectsData) {
               if (subjectData is Map<String, dynamic>) {
                 myNotes.add(SubjectModel.fromMap(subjectData));
               }
             }
           } else if (subjectsData is Map<String, dynamic>) {
-            // Handle object format with numbered keys
             subjectsData.forEach((key, value) {
               if (value is Map<String, dynamic>) {
                 myNotes.add(SubjectModel.fromMap(value));
@@ -72,7 +70,6 @@ class MyNotesController extends GetxController {
       errorMessage.value = e.toString();
       print('Error fetching subjects: $e');
 
-      // Show error to user
       Get.snackbar(
         'Error',
         'Failed to load subjects: ${e.toString()}',

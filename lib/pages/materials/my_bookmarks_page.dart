@@ -55,13 +55,11 @@ class _MyBookmarksState extends State<MyBookmarks> {
   void initState() {
     super.initState();
 
-    // Initialize controllers
     searchController = TextEditingController();
     searchFocusNode = FocusNode();
     bookmarkController = Get.find<BookmarkController>();
     materialsController = Get.find<MaterialsWithSubjectsController>();
 
-    // Initialize cart and purchased materials controllers
     Get.put(MyMaterialsController());
     recentController = Get.put(RecentMaterialsController()); // ADD THIS
 
@@ -1201,7 +1199,6 @@ class _MyBookmarksState extends State<MyBookmarks> {
         selectedPriceFilter.isNotEmpty;
   }
 
-  // Show Filter Bottom Sheet
   void _showFilterBottomSheet() {
     Set<String> availableTypes = bookmarkedMaterials.map((m) => m.type).toSet();
     final subjects = ['All'] + _getUniqueSubjects();
@@ -1222,7 +1219,6 @@ class _MyBookmarksState extends State<MyBookmarks> {
           ),
           child: Column(
             children: [
-              // Handle bar
               Container(
                 margin: EdgeInsets.only(top: 8),
                 width: 40,
@@ -1520,7 +1516,6 @@ class _MyBookmarksState extends State<MyBookmarks> {
     );
   }
 
-  // Show Clear All Dialog
   void _showClearAllDialog() {
     showDialog(
       context: context,
