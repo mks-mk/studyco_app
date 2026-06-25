@@ -51,7 +51,7 @@ int is_sub_question(const char *str)
     
     //check if the current character is a letter b/w a-z OR A-Z
     //and ensure the very next character is a ')'
-    if((*str >= 'a' && *str<= 'z') || (*str >= 'A' && *str <= 'Z') && *(str ++) == ')' )
+    if((*str >= 'a' && *str<= 'z') || (*str >= 'A' && *str <= 'Z') && *(str + 1) == ')' )
     {
         return 1;
     }
