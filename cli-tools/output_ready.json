@@ -1,0 +1,7 @@
+{
+  "type": "syllabus",
+  "data": {
+    "module 1": "Electrochemistry and Corrosion Science Electrochemical Cell- Electrode potential- Nernst equation for single electrode and cell (Numerical problems)- Reference electrodes – SHE & Calomel electrode –Construction and Working - Electrochemical series - Applications – Glass Electrode & pH Measurement-ConductivityMeasurement using Digital conductivity meter. Li-ion battery & H2-O2 fuel cell (acid electrolyte only) construction and working. Corrosion –Electrochemical corrosion mechanism (acidic & alkaline medium) - Galvanic series - Corrosion control methods - Cathodic Protection - Sacrificial anodic protection and impressed current cathodic protection – Electroplating of copper - Electroless plating of copper",
+   "module 2": "Materials for Electronic Applications Nanomaterials - Classification based on Dimension & Materials- Synthesis – Sol gel & Chemical Reduction - Applications of nanomaterials – Carbon Nanotubes, Fullerenes, Graphene & Carbon Quantum Dots – structure, properties & application. Polymers - Fire Retardant Polymers- Halogenated & Non-halogenated polymers (Examples only)- Conducting Polymers-ClassificationPolyaniline & Polypyrrole-synthesis, properties and applications. Organic electronic materials and devices- construction, working and applications of Organic Light Emitting Diode (OLED) & Dye-Sensitized Solar Cells (DSSC) Materials used in Quantum computing Technology, Super capacitors, Spintronics"
+ }
+}
