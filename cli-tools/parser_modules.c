@@ -203,50 +203,103 @@ void parse_questions(FILE *input_file, FILE *output_file)
 
 
 
-
 //function to take a raw messy syllabus text file and organize it into a structured JSON dictionary
 void parse_syllabus(FILE *input_file, FILE *output_file)
 {
-    char line[256];
-    int is_first_note = 1;
-    char module_name[64]="";
+    char *line;
+    int line_capacity = 256;
+    int is_first_module = 1;   //used to print commas on JSON structures
+    char module_name[64] = "";
     char *module_topics;
     int line_length = 0;
 
-    module_topics =(char *)calloc(4096, sizeof(char));
-    if( module_topics == NULL)
+    line = (char *)malloc(line_capacity * sizeof(char));
+    if (line == NULL)
     {
-        printf("System Error, Failed to allocate memory !\n");
+        printf("System Error, Failed to allocate memory!\n");
+        exit(1);
+    }
+
+    module_topics = (char *)calloc(4096, sizeof(char));
+    if (module_topics == NULL)
+    {
+        printf("System Error, Failed to allocate memory!\n");
+        free(line);
         exit(1);
     }
 
     //write the structure of JSON array header
     fprintf(output_file, "{\n  \"type\": \"syllabus\",\n  \"data\": {\n");
-    
-    while(fgets(line, sizeof(line), input_file) != NULL)
+
+    while (fgets(line, line_capacity, input_file) != NULL)
     {
-        if(strstr(line, "Module") != NULL || strstr(line, "module") != NULL)
+        /* Read the complete line */
+        line_length = strlen(line);
+
+        while (line_length > 0 && line[line_length - 1] != '\n')
+        {
+            line_capacity *= 2;
+
+            char *temp = realloc(line, line_capacity);
+            if (temp == NULL)
+            {
+                free(line);
+                free(module_topics);
+                printf("System Error, Failed to reallocate memory!\n");
+                exit(1);
+            }
+
+            line = temp;
+
+            if (fgets(line + line_length,
+                      line_capacity - line_length,
+                      input_file) == NULL)
+            {
+                break;
+            }
+
+            line_length = strlen(line);
+        }
+
+        if (line_length > 0 && line[line_length - 1] == '\n')
+        {
+            line[line_length - 1] = '\0';
+        }
+
+        char *trimmed = trim_spaces(line);
+
+        /* Module line must START with Module */
+        if (strncmp(trimmed, "Module", 6) == 0 ||
+            strncmp(trimmed, "module", 6) == 0)
         {
             if (strlen(module_name) > 0)
             {
-                if(!is_first_note)
+                if (!is_first_module)
                 {
                     fprintf(output_file, ",\n");
                 }
-            fprintf(output_file, "    \"%s\": \"%s\"", trim_spaces(module_name), trim_spaces(module_topics));
-            is_first_note = 0;
-            }
-            char *module_title, *module_description;
-            
-            module_title = strtok(line, ":");  //strtok() cuts a string into pieces using a separator.Here, the separator is :
-            module_description = strtok(NULL, "\n");
 
-            if(module_title != NULL)
+                fprintf(output_file,
+                        "    \"%s\": \"%s\"",
+                        trim_spaces(module_name),
+                        trim_spaces(module_topics));
+
+                is_first_module = 0;
+            }
+
+            char *module_title;
+            char *module_description;
+
+            module_title = strtok(trimmed, ":");
+            module_description = strtok(NULL, "");
+
+            if (module_title != NULL)
             {
-                strcpy(module_name, module_title);
-                if(module_description != NULL)
+                strcpy(module_name, trim_spaces(module_title));
+
+                if (module_description != NULL)
                 {
-                    strcpy(module_topics, module_description);
+                    strcpy(module_topics, trim_spaces(module_description));
                 }
                 else
                 {
@@ -258,30 +311,32 @@ void parse_syllabus(FILE *input_file, FILE *output_file)
         {
             if (strlen(module_name) > 0)
             {
-                line_length = strlen(line);
-                if( line_length > 0 && line[line_length - 1] == '\n')
-                {
-                    line[line_length - 1] = '\0';
-                }
                 strcat(module_topics, " ");
-                strcat(module_topics, line);
+                strcat(module_topics, trimmed);
             }
         }
     }
+
     if (strlen(module_name) > 0)
     {
-        if(!is_first_note)
+        if (!is_first_module)
         {
             fprintf(output_file, ",\n");
         }
-        fprintf(output_file, "   \"%s\": \"%s\"", trim_spaces(module_name), trim_spaces(module_topics));
+
+        fprintf(output_file,
+                "    \"%s\": \"%s\"",
+                trim_spaces(module_name),
+                trim_spaces(module_topics));
     }
-    fprintf(output_file, "\n }\n}\n");
+
+    fprintf(output_file, "\n  }\n}\n");
+
     printf("░░░ full Syllabus Paragraph JSON generated Successfully! ░░░\n");
-    
+
+    free(line);
     free(module_topics);
 }
-
 
 
 
@@ -290,7 +345,7 @@ void parse_syllabus(FILE *input_file, FILE *output_file)
 void parse_notes(FILE *input_file, FILE *output_file)
 {
     char line[512];
-    int is_first_note = 1;
+    int is_first_module = 1;
 
     fprintf(output_file, "{\n  \"type\": \"notes\", \n  \"materials\":[\n");
     while (fgets(line, sizeof(line), input_file) != NULL)
@@ -305,7 +360,7 @@ void parse_notes(FILE *input_file, FILE *output_file)
 
             if(note_title != NULL && author_name != NULL && download_link != NULL)
             {
-                if (!is_first_note)
+                if (!is_first_module)
                 {
                     fprintf(output_file, ",\n");
                 }
@@ -315,7 +370,7 @@ void parse_notes(FILE *input_file, FILE *output_file)
                 fprintf(output_file, "    \"link\": \"%s\"\n", trim_spaces(download_link));
                 fprintf(output_file, "    }");
 
-                is_first_note = 0;
+                is_first_module = 0;
             }
         }
     }

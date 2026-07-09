@@ -1,0 +1,22 @@
+module 1:Introduction to Java:
+Structure of a simple java program; Java programming Environment and
+Runtime Environment (Command Line & IDE); Java compiler; Java Virtual
+Machine; Primitive Data types and Wrapper Types; Casting and Autoboxing;
+Arrays; Strings; Vector class; Operators - Arithmetic, Bitwise, Relational,
+Boolean Logical, Assignment, Conditional (Ternary); Operator Precedence;
+Control Statements - Selection Statements, Iteration Statements and Jump
+Statements; Functions; Command Line Arguments; Variable Length
+Arguments; Classes; Abstract Classes; Interfaces. [Use proper naming
+conventions] 
+module 2:Polymorphism :-
+Method Overloading, Using Objects as Parameters, Returning Objects,
+Recursion.
+Static Members, Final Variables, Inner Classes.
+Inheritance - Super Class, Sub Class, Types of Inheritance, The super
+keyword, protected Members, Calling Order of Constructors.
+Method Overriding, Dynamic Method Dispatch, Using final with
+Inheritance, 
+module 3:Steps, Common JDBC Components, Connection Establishment, SQL
+Fundamentals [For projects only] - Creating and Executing basic SQL
+Queries, Working with Result Set, Performing CRUD Operations with
+JDBC. 

@@ -1,0 +1,9 @@
+a) Discuss the design of a glass electrode and explain how a glass electrode can
+
+be employed in the measurement of pH of a solution.
+
+
+b) How sacrificial anodic protection can be used for the prevention of corrosion. CO1 (3)
+
+ a) Describe the construction and working of Li ion cell. CO1 (6)
+b) Write any three applications of electrochemical series.
